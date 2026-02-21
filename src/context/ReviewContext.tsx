@@ -1,0 +1,144 @@
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import type {
+    ReviewState,
+    ReviewActionType,
+    Language,
+    ReviewType,
+    ReviewResult,
+    AggregatedResult,
+} from '../types';
+import { submitReview } from '../services/api';
+
+const initialState: ReviewState = {
+    loading: false,
+    language: 'javascript',
+    reviewType: 'full_review',
+    code: '',
+    openaiResult: null,
+    claudeResult: null,
+    aggregatedResult: null,
+    error: null,
+};
+
+function reviewReducer(state: ReviewState, action: ReviewActionType): ReviewState {
+    switch (action.type) {
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'SET_LANGUAGE':
+            return { ...state, language: action.payload };
+        case 'SET_REVIEW_TYPE':
+            return { ...state, reviewType: action.payload };
+        case 'SET_CODE':
+            return { ...state, code: action.payload };
+        case 'SET_OPENAI_RESULT':
+            return { ...state, openaiResult: action.payload };
+        case 'SET_CLAUDE_RESULT':
+            return { ...state, claudeResult: action.payload };
+        case 'SET_AGGREGATED_RESULT':
+            return { ...state, aggregatedResult: action.payload };
+        case 'SET_ERROR':
+            return { ...state, error: action.payload };
+        case 'CLEAR_RESULTS':
+            return {
+                ...state,
+                openaiResult: null,
+                claudeResult: null,
+                aggregatedResult: null,
+                error: null,
+                code: '',
+            };
+        default:
+            return state;
+    }
+}
+
+interface ReviewContextValue {
+    state: ReviewState;
+    setLanguage: (lang: Language) => void;
+    setReviewType: (type: ReviewType) => void;
+    setCode: (code: string) => void;
+    analyzeCode: () => Promise<void>;
+    clearResults: () => void;
+    setResults: (
+        openai: ReviewResult,
+        claude: ReviewResult,
+        aggregated: AggregatedResult
+    ) => void;
+}
+
+const ReviewContext = createContext<ReviewContextValue | undefined>(undefined);
+
+export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [state, dispatch] = useReducer(reviewReducer, initialState);
+
+    const setLanguage = useCallback((lang: Language) => {
+        dispatch({ type: 'SET_LANGUAGE', payload: lang });
+    }, []);
+
+    const setReviewType = useCallback((type: ReviewType) => {
+        dispatch({ type: 'SET_REVIEW_TYPE', payload: type });
+    }, []);
+
+    const setCode = useCallback((code: string) => {
+        dispatch({ type: 'SET_CODE', payload: code });
+    }, []);
+
+    const clearResults = useCallback(() => {
+        dispatch({ type: 'CLEAR_RESULTS' });
+    }, []);
+
+    const setResults = useCallback(
+        (openai: ReviewResult, claude: ReviewResult, aggregated: AggregatedResult) => {
+            dispatch({ type: 'SET_OPENAI_RESULT', payload: openai });
+            dispatch({ type: 'SET_CLAUDE_RESULT', payload: claude });
+            dispatch({ type: 'SET_AGGREGATED_RESULT', payload: aggregated });
+        },
+        []
+    );
+
+    const analyzeCode = useCallback(async () => {
+        dispatch({ type: 'SET_ERROR', payload: null });
+        dispatch({ type: 'SET_LOADING', payload: true });
+
+        try {
+            const result = await submitReview({
+                code: state.code,
+                language: state.language,
+                review_type: state.reviewType,
+            });
+
+            dispatch({ type: 'SET_OPENAI_RESULT', payload: result.openaiResult });
+            dispatch({ type: 'SET_CLAUDE_RESULT', payload: result.claudeResult });
+            dispatch({ type: 'SET_AGGREGATED_RESULT', payload: result.aggregatedResult });
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+            dispatch({ type: 'SET_ERROR', payload: message });
+        } finally {
+            dispatch({ type: 'SET_LOADING', payload: false });
+        }
+    }, [state.code, state.language, state.reviewType]);
+
+    return (
+        <ReviewContext.Provider
+            value={{
+                state,
+                setLanguage,
+                setReviewType,
+                setCode,
+                analyzeCode,
+                clearResults,
+                setResults,
+            }}
+        >
+            {children}
+        </ReviewContext.Provider>
+    );
+};
+
+export const useReview = (): ReviewContextValue => {
+    const context = useContext(ReviewContext);
+    if (!context) {
+        throw new Error('useReview must be used within a ReviewProvider');
+    }
+    return context;
+};
