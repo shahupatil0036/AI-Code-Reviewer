@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef } from 'react';
 import type {
     ReviewState,
     ReviewActionType,
@@ -96,15 +96,20 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         []
     );
 
+    // Keep a ref to the latest state for the analyzeCode callback
+    const stateRef = useRef(state);
+    stateRef.current = state;
+
     const analyzeCode = useCallback(async () => {
         dispatch({ type: 'SET_ERROR', payload: null });
         dispatch({ type: 'SET_LOADING', payload: true });
 
         try {
+            const { code, language, reviewType } = stateRef.current;
             const result = await submitReview({
-                code: state.code,
-                language: state.language,
-                review_type: state.reviewType,
+                code,
+                language,
+                review_type: reviewType,
             });
 
             dispatch({ type: 'SET_OPENAI_RESULT', payload: result.openaiResult });
@@ -116,7 +121,7 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         } finally {
             dispatch({ type: 'SET_LOADING', payload: false });
         }
-    }, [state.code, state.language, state.reviewType]);
+    }, []);
 
     return (
         <ReviewContext.Provider

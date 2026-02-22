@@ -162,13 +162,27 @@
   }
 
   @keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.3); }
-    50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
+
+    0%,
+    100% {
+      box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+    }
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .animate-fade-in {
@@ -176,8 +190,15 @@
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .animate-slide-up {
@@ -185,8 +206,13 @@
   }
 
   @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .animate-spin-slow {
@@ -198,4 +224,48 @@
 .light-mode {
   background-color: #f8fafc;
   color: #1e293b;
+}
+
+.light-mode .glass-card {
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.9), rgba(226, 232, 240, 0.6));
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.light-mode .glass-card-hover:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.1);
+}
+
+.light-mode .gradient-text {
+  background: linear-gradient(135deg, #6366f1, #0891b2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.light-mode .btn-primary {
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.light-mode .btn-secondary {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.light-mode .btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.light-mode ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+  background: #818cf8;
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
 }
