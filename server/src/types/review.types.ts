@@ -11,7 +11,7 @@ export const reviewRequestSchema = z.object({
         .string({ required_error: "language is required" })
         .min(1, "language is required"),
     reviewType: z.enum(
-        ["full_review", "bugs_only", "security", "performance"],
+        ["full_review", "bugs_only", "security", "performance", "bug_detection", "security_audit"],
         { required_error: "reviewType is required", invalid_type_error: "Invalid review type" }
     ),
 });

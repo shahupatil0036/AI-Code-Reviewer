@@ -1,7 +1,7 @@
 import { reviewWithOpenAI } from "./openai.service.js";
 import type { ReviewResult } from "../types/review.types.js";
 
-const REVIEW_TIMEOUT_MS = 10_000; // 10 seconds
+const REVIEW_TIMEOUT_MS = 60_000; // 60 seconds
 
 /**
  * High-level review orchestrator.
@@ -30,13 +30,17 @@ export async function performReview(
         return result;
     } catch (error) {
         if (error instanceof Error && error.message.includes("timed out")) {
-            throw new Error("Review request timed out. Please try again.");
+            const timeoutError = new Error("Review request timed out. Please try again.") as Error & { statusCode: number };
+            timeoutError.statusCode = 408;
+            throw timeoutError;
         }
 
         console.error("[ReviewService] Unexpected error:", error);
-        throw new Error("An unexpected error occurred during the review.", {
+        const serviceError = new Error("An unexpected error occurred during the review.", {
             cause: error,
-        });
+        }) as Error & { statusCode: number };
+        serviceError.statusCode = 502;
+        throw serviceError;
     } finally {
         clearTimeout(timeout);
     }

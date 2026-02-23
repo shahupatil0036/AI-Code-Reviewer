@@ -78,7 +78,7 @@ const CodeEditor: React.FC = () => {
         if (!state.code) {
             setCode(defaultCode[state.language]);
         }
-    }, [state.language]);
+    }, [state.language, setCode]);
 
     const handleEditorChange = (value: string | undefined) => {
         setCode(value || '');

@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { env } from "../config/env.js";
 
 interface AppError extends Error {
     statusCode?: number;
@@ -13,7 +14,7 @@ export function globalErrorHandler(
     const statusCode = err.statusCode ?? 500;
 
     const message =
-        process.env.NODE_ENV === "production"
+        env.NODE_ENV === "production"
             ? statusCode === 500
                 ? "Internal server error"
                 : err.message

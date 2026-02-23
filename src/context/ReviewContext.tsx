@@ -100,22 +100,35 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const stateRef = useRef(state);
     stateRef.current = state;
 
+    // AbortController ref for cancelling in-flight requests
+    const abortRef = useRef<AbortController | null>(null);
+
     const analyzeCode = useCallback(async () => {
+        // Cancel any previous in-flight request
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+
         dispatch({ type: 'SET_ERROR', payload: null });
         dispatch({ type: 'SET_LOADING', payload: true });
 
         try {
             const { code, language, reviewType } = stateRef.current;
-            const result = await submitReview({
-                code,
-                language,
-                review_type: reviewType,
-            });
+            const result = await submitReview(
+                {
+                    code,
+                    language,
+                    review_type: reviewType,
+                },
+                controller.signal
+            );
 
             dispatch({ type: 'SET_OPENAI_RESULT', payload: result.openaiResult });
             dispatch({ type: 'SET_CLAUDE_RESULT', payload: result.claudeResult });
             dispatch({ type: 'SET_AGGREGATED_RESULT', payload: result.aggregatedResult });
         } catch (err) {
+            // Ignore abort errors (user cancelled or started a new request)
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             const message = err instanceof Error ? err.message : 'An unexpected error occurred';
             dispatch({ type: 'SET_ERROR', payload: message });
         } finally {

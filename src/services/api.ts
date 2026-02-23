@@ -1,210 +1,206 @@
-import type { ReviewPayload, ReviewResult, AggregatedResult } from '../types';
+import type { ReviewPayload, ReviewResult, AggregatedResult, BugIssue, SecurityIssue, PerformanceIssue } from '../types';
 
-const generateMockBugs = (language: string) => [
+// ── API Configuration ───────────────────────────────────────────────────
+
+const API_BASE = '/api';
+
+// ── Backend response types (flat shape from server) ─────────────────────
+
+interface BackendBug {
+    line?: number | null;
+    description: string;
+    severity: string;
+}
+
+interface BackendSecurityIssue {
+    description: string;
+    severity: string;
+}
+
+interface BackendPerformanceIssue {
+    description: string;
+    suggestion: string;
+}
+
+interface BackendReviewResult {
+    bugs: BackendBug[];
+    security_issues: BackendSecurityIssue[];
+    performance_issues: BackendPerformanceIssue[];
+    refactored_code: string;
+    score: number;
+    confidence: string;
+}
+
+interface BackendApiResponse {
+    success: boolean;
+    data?: BackendReviewResult;
+    error?: string;
+}
+
+// ── Mapping helpers (backend → frontend types) ──────────────────────────
+
+let idCounter = 0;
+const nextId = (prefix: string) => `${prefix}-${++idCounter}`;
+
+function mapSeverityToBug(severity: string): BugIssue['severity'] {
+    if (severity === 'critical' || severity === 'high') return 'critical';
+    if (severity === 'medium') return 'warning';
+    return 'info';
+}
+
+function mapSeverityToSecurity(severity: string): SecurityIssue['severity'] {
+    const valid: SecurityIssue['severity'][] = ['critical', 'high', 'medium', 'low'];
+    return valid.includes(severity as SecurityIssue['severity'])
+        ? (severity as SecurityIssue['severity'])
+        : 'medium';
+}
+
+function mapImpact(severity: string): PerformanceIssue['impact'] {
+    if (severity === 'high' || severity === 'critical') return 'high';
+    if (severity === 'medium') return 'medium';
+    return 'low';
+}
+
+function mapBackendToFrontend(backend: BackendReviewResult): ReviewResult {
+    return {
+        bugs: backend.bugs.map((b) => ({
+            id: nextId('bug'),
+            line: b.line ?? 0,
+            severity: mapSeverityToBug(b.severity),
+            message: b.description,
+            suggestion: `Fix: ${b.description}`,
+        })),
+        security_issues: backend.security_issues.map((s) => ({
+            id: nextId('sec'),
+            type: 'Security',
+            severity: mapSeverityToSecurity(s.severity),
+            description: s.description,
+            recommendation: `Remediate: ${s.description}`,
+        })),
+        performance_issues: backend.performance_issues.map((p) => ({
+            id: nextId('perf'),
+            area: 'General',
+            impact: mapImpact('medium'),
+            description: p.description,
+            suggestion: p.suggestion,
+        })),
+        refactored_code: backend.refactored_code,
+        score: backend.score,
+        confidence: (backend.confidence.charAt(0).toUpperCase() + backend.confidence.slice(1)) as ReviewResult['confidence'],
+    };
+}
+
+function generateAggregatedResult(
+    openai: ReviewResult,
+    claude: ReviewResult
+): AggregatedResult {
+    const avgScore = Math.round((openai.score + claude.score) / 2);
+    const totalBugs = openai.bugs.length + claude.bugs.length;
+    const totalSecurity = openai.security_issues.length + claude.security_issues.length;
+
+    const criticalIssues: string[] = [];
+    if (totalBugs > 0) criticalIssues.push(`${totalBugs} bug(s) detected across analysis`);
+    if (totalSecurity > 0) criticalIssues.push(`${totalSecurity} security concern(s) identified`);
+    if (openai.performance_issues.length + claude.performance_issues.length > 0) {
+        criticalIssues.push('Performance bottlenecks detected');
+    }
+
+    const recommendations: string[] = [];
+    if (totalBugs > 0) recommendations.push('Fix all reported bugs before deployment');
+    if (totalSecurity > 0) recommendations.push('Address security vulnerabilities immediately');
+    recommendations.push('Consider adding unit tests for critical paths');
+
+    return {
+        overall_score: avgScore,
+        critical_issues: criticalIssues.length > 0 ? criticalIssues : ['No critical issues found'],
+        recommendations,
+        executive_summary: `AI analysis reveals a codebase with a quality score of ${avgScore}/10. ${totalBugs} potential bug(s) and ${totalSecurity} security concern(s) were identified.`,
+        risk_level: avgScore >= 7 ? 'Low' : avgScore >= 5 ? 'Medium' : 'High',
+        score_breakdown: {
+            bugs: Math.max(Math.round((10 - totalBugs * 1.5) * 10) / 10, 0),
+            security: Math.max(Math.round((10 - totalSecurity * 2) * 10) / 10, 0),
+            performance: Math.round((avgScore + 1) * 10) / 10,
+        },
+    };
+}
+
+// ── Mock generators (fallback for demo mode) ────────────────────────────
+
+const generateMockBugs = (language: string): BugIssue[] => [
     {
         id: 'bug-1',
         line: 12,
-        severity: 'critical' as const,
+        severity: 'critical',
         message: `Potential null reference error in ${language} code at line 12`,
         suggestion: 'Add null check before accessing object properties',
     },
     {
         id: 'bug-2',
         line: 25,
-        severity: 'warning' as const,
+        severity: 'warning',
         message: 'Unused variable declaration may cause memory overhead',
         suggestion: 'Remove unused variable or use underscore prefix',
     },
     {
         id: 'bug-3',
         line: 38,
-        severity: 'info' as const,
+        severity: 'info',
         message: 'Consider using const instead of let for immutable values',
         suggestion: 'Replace let with const for variables that are not reassigned',
     },
 ];
 
-const generateMockSecurity = () => [
+const generateMockSecurity = (): SecurityIssue[] => [
     {
         id: 'sec-1',
         type: 'Injection',
-        severity: 'high' as const,
+        severity: 'high',
         description: 'Potential SQL/NoSQL injection vulnerability detected',
         recommendation: 'Use parameterized queries or prepared statements',
     },
     {
         id: 'sec-2',
         type: 'XSS',
-        severity: 'medium' as const,
+        severity: 'medium',
         description: 'Unsanitized user input rendered in DOM',
         recommendation: 'Apply proper input sanitization and output encoding',
     },
 ];
 
-const generateMockPerformance = () => [
+const generateMockPerformance = (): PerformanceIssue[] => [
     {
         id: 'perf-1',
         area: 'Memory',
-        impact: 'high' as const,
+        impact: 'high',
         description: 'Large array created inside loop causing excessive memory allocation',
         suggestion: 'Move array initialization outside the loop or use streaming',
     },
     {
         id: 'perf-2',
         area: 'Complexity',
-        impact: 'medium' as const,
+        impact: 'medium',
         description: 'Nested loops resulting in O(n²) time complexity',
         suggestion: 'Consider using a hash map for O(n) lookup',
     },
-    {
-        id: 'perf-3',
-        area: 'I/O',
-        impact: 'low' as const,
-        description: 'Synchronous file operations blocking the event loop',
-        suggestion: 'Use async/await with non-blocking I/O operations',
-    },
 ];
-
-const generateRefactoredCode = (language: string): string => {
-    const samples: Record<string, string> = {
-        javascript: `// Refactored code with improvements
-function processData(items) {
-  if (!items?.length) {
-    return { data: [], error: null };
-  }
-
-  const results = items
-    .filter(item => item != null && item.isValid)
-    .map(item => ({
-      ...item,
-      processed: true,
-      timestamp: Date.now(),
-    }));
-
-  return { data: results, error: null };
-}`,
-        typescript: `// Refactored code with type safety
-interface DataItem {
-  id: string;
-  isValid: boolean;
-  processed?: boolean;
-  timestamp?: number;
-}
-
-function processData(items: DataItem[] | null): { data: DataItem[]; error: string | null } {
-  if (!items?.length) {
-    return { data: [], error: null };
-  }
-
-  const results = items
-    .filter((item): item is DataItem => item != null && item.isValid)
-    .map(item => ({
-      ...item,
-      processed: true,
-      timestamp: Date.now(),
-    }));
-
-  return { data: results, error: null };
-}`,
-        python: `# Refactored code with improvements
-from typing import Optional, List, Dict, Any
-
-def process_data(items: Optional[List[Dict[str, Any]]]) -> Dict[str, Any]:
-    if not items:
-        return {"data": [], "error": None}
-
-    results = [
-        {**item, "processed": True}
-        for item in items
-        if item is not None and item.get("is_valid")
-    ]
-
-    return {"data": results, "error": None}`,
-        java: `// Refactored code with null safety
-public class DataProcessor {
-    public ProcessResult processData(List<DataItem> items) {
-        if (items == null || items.isEmpty()) {
-            return new ProcessResult(Collections.emptyList(), null);
-        }
-
-        List<DataItem> results = items.stream()
-            .filter(Objects::nonNull)
-            .filter(DataItem::isValid)
-            .map(item -> item.withProcessed(true))
-            .collect(Collectors.toList());
-
-        return new ProcessResult(results, null);
-    }
-}`,
-        kotlin: `// Refactored code with Kotlin idioms
-data class DataItem(
-    val id: String,
-    val isValid: Boolean,
-    val processed: Boolean = false
-)
-
-fun processData(items: List<DataItem>?): Result<List<DataItem>> {
-    if (items.isNullOrEmpty()) {
-        return Result.success(emptyList())
-    }
-
-    val results = items
-        .filter { it.isValid }
-        .map { it.copy(processed = true) }
-
-    return Result.success(results)
-}`,
-    };
-
-    return samples[language] || samples.javascript;
-};
 
 const simulateDelay = (ms: number): Promise<void> =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-const generateModelResult = (language: string): ReviewResult => ({
+const generateMockResult = (language: string): ReviewResult => ({
     bugs: generateMockBugs(language),
     security_issues: generateMockSecurity(),
     performance_issues: generateMockPerformance(),
-    refactored_code: generateRefactoredCode(language),
+    refactored_code: `// Refactored ${language} code with improvements applied`,
     score: Math.floor(Math.random() * 3) + 6,
     confidence: (['High', 'Medium'] as const)[Math.floor(Math.random() * 2)],
 });
 
-const generateAggregatedResult = (
-    openai: ReviewResult,
-    claude: ReviewResult
-): AggregatedResult => {
-    const avgScore = Math.round((openai.score + claude.score) / 2);
-    const totalBugs = openai.bugs.length + claude.bugs.length;
-    const totalSecurity = openai.security_issues.length + claude.security_issues.length;
-
-    return {
-        overall_score: avgScore,
-        critical_issues: [
-            `${totalBugs} bug(s) detected across both models`,
-            `${totalSecurity} security concern(s) identified`,
-            'Potential performance bottlenecks in core logic',
-        ],
-        recommendations: [
-            'Add comprehensive null checks throughout the codebase',
-            'Implement input validation and sanitization',
-            'Optimize loop operations for better performance',
-            'Add error boundaries and graceful error handling',
-            'Consider adding unit tests for critical paths',
-        ],
-        executive_summary: `Analysis by two AI models reveals a codebase with a quality score of ${avgScore}/10. While the core logic is functional, there are ${totalBugs} potential bugs and ${totalSecurity} security concerns that should be addressed. Performance optimizations are recommended for production readiness.`,
-        risk_level: avgScore >= 7 ? 'Low' : avgScore >= 5 ? 'Medium' : 'High',
-        score_breakdown: {
-            bugs: Math.round((10 - totalBugs) * 10) / 10,
-            security: Math.round((10 - totalSecurity * 1.5) * 10) / 10,
-            performance: Math.round((avgScore + Math.random() * 2) * 10) / 10,
-        },
-    };
-};
+// ── Main API function ───────────────────────────────────────────────────
 
 export const submitReview = async (
-    payload: ReviewPayload
+    payload: ReviewPayload,
+    signal?: AbortSignal
 ): Promise<{
     openaiResult: ReviewResult;
     claudeResult: ReviewResult;
@@ -218,17 +214,58 @@ export const submitReview = async (
         throw new Error('Code must be at least 10 characters long');
     }
 
-    // Simulate network delay
-    await simulateDelay(2000 + Math.random() * 1000);
+    try {
+        // Call the real backend
+        const response = await fetch(`${API_BASE}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: payload.code,
+                language: payload.language,
+                reviewType: payload.review_type,
+            }),
+            signal,
+        });
 
-    // Simulate random failure (5% chance)
-    if (Math.random() < 0.05) {
-        throw new Error('API request failed. Please try again.');
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            throw new Error(
+                (errorBody as { error?: string }).error ||
+                `Server error (${response.status})`
+            );
+        }
+
+        const json: BackendApiResponse = await response.json();
+
+        if (!json.success || !json.data) {
+            throw new Error(json.error || 'Unexpected server response');
+        }
+
+        // Map backend response to frontend types
+        // Use the same result for both "models" since
+        // the backend currently only has one model (OpenAI)
+        const openaiResult = mapBackendToFrontend(json.data);
+        const claudeResult = mapBackendToFrontend(json.data);
+        const aggregatedResult = generateAggregatedResult(openaiResult, claudeResult);
+
+        return { openaiResult, claudeResult, aggregatedResult };
+    } catch (error) {
+        // If the backend is unreachable, fall back to demo mode
+        if (
+            error instanceof TypeError &&
+            error.message.includes('fetch')
+        ) {
+            console.warn('[API] Backend unreachable — falling back to demo mode');
+            await simulateDelay(1500 + Math.random() * 500);
+
+            const openaiResult = generateMockResult(payload.language);
+            const claudeResult = generateMockResult(payload.language);
+            const aggregatedResult = generateAggregatedResult(openaiResult, claudeResult);
+
+            return { openaiResult, claudeResult, aggregatedResult };
+        }
+
+        // Re-throw all other errors (AbortError, server errors, etc.)
+        throw error;
     }
-
-    const openaiResult = generateModelResult(payload.language);
-    const claudeResult = generateModelResult(payload.language);
-    const aggregatedResult = generateAggregatedResult(openaiResult, claudeResult);
-
-    return { openaiResult, claudeResult, aggregatedResult };
 };
