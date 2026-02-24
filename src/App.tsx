@@ -3,7 +3,9 @@ import { Routes, Route } from 'react-router-dom';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { ReviewProvider } from './context/ReviewContext';
+import { ToastProvider } from './components/ui/Toast';
 import Navbar from './components/layout/Navbar';
+import ScrollToTop from './components/layout/ScrollToTop';
 import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
@@ -33,30 +35,33 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppContent: React.FC = () => (
   <ThemeProvider>
     <ReviewProvider>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/history"
-              element={
-                <ProtectedRoute>
-                  <HistoryPage />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
+      <ToastProvider>
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1 animate-page-enter">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <ProtectedRoute>
+                    <HistoryPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+          <ScrollToTop />
+        </div>
+      </ToastProvider>
     </ReviewProvider>
   </ThemeProvider>
 );

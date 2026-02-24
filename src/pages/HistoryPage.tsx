@@ -11,6 +11,9 @@ import {
     Calendar,
     ArrowLeft,
     ArrowRight,
+    ArrowUpRight,
+    SortDesc,
+    Filter,
 } from 'lucide-react';
 
 const mockHistory: HistoryItem[] = [
@@ -184,6 +187,14 @@ const languageColors: Record<Language, string> = {
     kotlin: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
 };
 
+const allLanguages: Language[] = ['javascript', 'typescript', 'python', 'java', 'kotlin'];
+const allReviewTypes: { value: ReviewType; label: string }[] = [
+    { value: 'bug_detection', label: 'Bug Detection' },
+    { value: 'security_audit', label: 'Security Audit' },
+    { value: 'performance', label: 'Performance' },
+    { value: 'full_review', label: 'Full Review' },
+];
+
 const reviewTypeLabels: Record<ReviewType, string> = {
     bug_detection: 'Bug Detection',
     security_audit: 'Security Audit',
@@ -211,18 +222,51 @@ const formatDate = (iso: string): string => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
+
 const HistoryPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage] = useState(1);
+    const [selectedLanguages, setSelectedLanguages] = useState<Language[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<ReviewType[]>([]);
+    const [sortBy, setSortBy] = useState<SortOption>('newest');
+    const [showFilters, setShowFilters] = useState(false);
     const navigate = useNavigate();
     const { setCode, setLanguage, setReviewType, setResults } = useReview();
 
-    const filteredHistory = mockHistory.filter(
-        (item) =>
-            item.language.includes(searchQuery.toLowerCase()) ||
-            item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            reviewTypeLabels[item.reviewType].toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const toggleLanguage = (lang: Language) => {
+        setSelectedLanguages((prev) =>
+            prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+        );
+    };
+
+    const toggleType = (type: ReviewType) => {
+        setSelectedTypes((prev) =>
+            prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+        );
+    };
+
+    const filteredHistory = mockHistory
+        .filter((item) => {
+            const searchMatch =
+                item.language.includes(searchQuery.toLowerCase()) ||
+                item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                reviewTypeLabels[item.reviewType].toLowerCase().includes(searchQuery.toLowerCase());
+
+            const langMatch = selectedLanguages.length === 0 || selectedLanguages.includes(item.language);
+            const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.reviewType);
+
+            return searchMatch && langMatch && typeMatch;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case 'newest': return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                case 'oldest': return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                case 'highest': return b.score - a.score;
+                case 'lowest': return a.score - b.score;
+                default: return 0;
+            }
+        });
 
     const handleOpenReview = (item: HistoryItem) => {
         setCode(item.code);
@@ -232,10 +276,12 @@ const HistoryPage: React.FC = () => {
         navigate('/dashboard');
     };
 
+    const activeFilterCount = selectedLanguages.length + selectedTypes.length;
+
     return (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-text-primary">Review History</h1>
                     <p className="text-sm text-text-muted mt-1">
@@ -243,33 +289,135 @@ const HistoryPage: React.FC = () => {
                     </p>
                 </div>
 
-                {/* Search */}
-                <div className="relative w-full sm:w-72">
-                    <Search
-                        size={16}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Search reviews..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/20 border border-border/30 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 transition-colors"
-                    />
+                {/* Search & Sort Row */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-64">
+                        <Search
+                            size={16}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search reviews..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/20 border border-border/30 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${showFilters || activeFilterCount > 0
+                            ? 'bg-primary/10 text-primary-light border-primary/30'
+                            : 'bg-black/20 text-text-muted border-border/30 hover:text-text-primary hover:bg-white/5'
+                            }`}
+                    >
+                        <Filter size={14} />
+                        <span className="hidden sm:inline">Filters</span>
+                        {activeFilterCount > 0 && (
+                            <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
+
+            {/* Filters Panel */}
+            {showFilters && (
+                <div className="glass-card p-5 mb-6 space-y-4 animate-fade-in">
+                    {/* Language Chips */}
+                    <div>
+                        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2.5">
+                            Language
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {allLanguages.map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => toggleLanguage(lang)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${selectedLanguages.includes(lang)
+                                        ? languageColors[lang]
+                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        }`}
+                                >
+                                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="gradient-divider" />
+
+                    {/* Review Type Chips */}
+                    <div>
+                        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2.5">
+                            Review Type
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {allReviewTypes.map((type) => (
+                                <button
+                                    key={type.value}
+                                    onClick={() => toggleType(type.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${selectedTypes.includes(type.value)
+                                        ? 'bg-primary/10 text-primary-light border-primary/30'
+                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        }`}
+                                >
+                                    {type.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="gradient-divider" />
+
+                    {/* Sort */}
+                    <div className="flex items-center gap-3">
+                        <SortDesc size={14} className="text-text-muted" />
+                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Sort</label>
+                        <div className="flex gap-1.5">
+                            {([
+                                { value: 'newest' as SortOption, label: 'Newest' },
+                                { value: 'oldest' as SortOption, label: 'Oldest' },
+                                { value: 'highest' as SortOption, label: 'Top Score' },
+                                { value: 'lowest' as SortOption, label: 'Low Score' },
+                            ]).map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setSortBy(opt.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${sortBy === opt.value
+                                        ? 'bg-primary/10 text-primary-light border-primary/30'
+                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* History List */}
             <div className="space-y-3">
                 {filteredHistory.length === 0 ? (
-                    <div className="glass-card p-12 text-center">
-                        <Clock size={32} className="mx-auto mb-4 text-text-muted" />
+                    <div className="glass-card p-16 text-center animate-fade-in">
+                        <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                            <Clock size={36} className="text-text-muted" />
+                        </div>
                         <h3 className="text-lg font-semibold text-text-primary mb-2">No Reviews Found</h3>
-                        <p className="text-sm text-text-muted">
-                            {searchQuery
-                                ? 'No reviews match your search query.'
-                                : 'Your review history will appear here.'}
+                        <p className="text-sm text-text-muted mb-6 max-w-sm mx-auto">
+                            {searchQuery || activeFilterCount > 0
+                                ? 'No reviews match your current filters. Try adjusting your search.'
+                                : 'Your review history will appear here after your first code analysis.'}
                         </p>
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            className="btn-primary text-sm"
+                        >
+                            <ArrowUpRight size={14} />
+                            Start Your First Review
+                        </button>
                     </div>
                 ) : (
                     filteredHistory.map((item, index) => (
@@ -317,7 +465,7 @@ const HistoryPage: React.FC = () => {
                                 {/* Arrow */}
                                 <ChevronRight
                                     size={18}
-                                    className="text-text-muted group-hover:text-primary-light transition-colors flex-shrink-0"
+                                    className="text-text-muted group-hover:text-primary-light group-hover:translate-x-0.5 transition-all flex-shrink-0"
                                 />
                             </div>
                         </button>
@@ -326,30 +474,32 @@ const HistoryPage: React.FC = () => {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 mt-8">
-                <button
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                    <ArrowLeft size={14} />
-                    Previous
-                </button>
-                {[1, 2, 3].map((page) => (
+            {filteredHistory.length > 0 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
                     <button
-                        key={page}
-                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${page === currentPage
-                            ? 'bg-primary/15 text-primary-light'
-                            : 'text-text-muted hover:text-text-primary hover:bg-white/5'
-                            }`}
+                        disabled={currentPage === 1}
+                        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
-                        {page}
+                        <ArrowLeft size={14} />
+                        Previous
                     </button>
-                ))}
-                <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
-                    Next
-                    <ArrowRight size={14} />
-                </button>
-            </div>
+                    {[1, 2, 3].map((page) => (
+                        <button
+                            key={page}
+                            className={`w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200 ${page === currentPage
+                                ? 'bg-primary/15 text-primary-light shadow-sm shadow-primary/10'
+                                : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+                                }`}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
+                        Next
+                        <ArrowRight size={14} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

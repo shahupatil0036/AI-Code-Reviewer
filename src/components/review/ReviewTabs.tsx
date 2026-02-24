@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useReview } from '../../context/ReviewContext';
 import ModelOutput from './ModelOutput';
 import AggregatedPanel from './AggregatedPanel';
@@ -23,13 +23,31 @@ const tabs: Tab[] = [
 const ReviewTabs: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabId>('openai');
     const { state } = useReview();
+    const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
+        openai: null,
+        claude: null,
+        aggregated: null,
+        score: null,
+    });
+    const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
 
     const hasResults = state.openaiResult || state.claudeResult || state.aggregatedResult;
+
+    // Update sliding indicator position
+    useEffect(() => {
+        const activeEl = tabRefs.current[activeTab];
+        if (activeEl) {
+            setIndicatorStyle({
+                width: activeEl.offsetWidth,
+                transform: `translateX(${activeEl.offsetLeft}px)`,
+            });
+        }
+    }, [activeTab]);
 
     if (!hasResults) {
         return (
             <div className="glass-card p-12 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center animate-scale-in">
                     <BarChart3 size={28} className="text-primary-light" />
                 </div>
                 <h3 className="text-lg font-semibold text-text-primary mb-2">No Analysis Yet</h3>
@@ -45,39 +63,47 @@ const ReviewTabs: React.FC = () => {
     return (
         <div className="glass-card overflow-hidden">
             {/* Tab Header */}
-            <div className="flex border-b border-border/30 overflow-x-auto">
+            <div className="relative flex border-b border-border/30 overflow-x-auto">
+                {/* Sliding indicator */}
+                <span
+                    className="absolute bottom-0 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-300 ease-out"
+                    style={indicatorStyle}
+                />
+
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
+                        ref={(el) => { tabRefs.current[tab.id] = el; }}
                         onClick={() => setActiveTab(tab.id)}
                         className={`flex items-center gap-2 px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all duration-200 relative ${activeTab === tab.id
-                                ? 'text-primary-light'
-                                : 'text-text-muted hover:text-text-secondary'
+                            ? 'text-primary-light'
+                            : 'text-text-muted hover:text-text-secondary'
                             }`}
                     >
-                        {tab.icon}
+                        <span className={`transition-transform duration-200 ${activeTab === tab.id ? 'scale-110' : ''}`}>
+                            {tab.icon}
+                        </span>
                         <span className="hidden sm:inline">{tab.label}</span>
-                        {activeTab === tab.id && (
-                            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary to-accent" />
-                        )}
                     </button>
                 ))}
             </div>
 
             {/* Tab Content */}
             <div className="p-5">
-                {activeTab === 'openai' && state.openaiResult && (
-                    <ModelOutput result={state.openaiResult} modelName="OpenAI GPT-4" />
-                )}
-                {activeTab === 'claude' && state.claudeResult && (
-                    <ModelOutput result={state.claudeResult} modelName="Anthropic Claude" />
-                )}
-                {activeTab === 'aggregated' && state.aggregatedResult && (
-                    <AggregatedPanel result={state.aggregatedResult} />
-                )}
-                {activeTab === 'score' && state.aggregatedResult && (
-                    <ScorePanel result={state.aggregatedResult} />
-                )}
+                <div className="animate-fade-in" key={activeTab}>
+                    {activeTab === 'openai' && state.openaiResult && (
+                        <ModelOutput result={state.openaiResult} modelName="OpenAI GPT-4" />
+                    )}
+                    {activeTab === 'claude' && state.claudeResult && (
+                        <ModelOutput result={state.claudeResult} modelName="Anthropic Claude" />
+                    )}
+                    {activeTab === 'aggregated' && state.aggregatedResult && (
+                        <AggregatedPanel result={state.aggregatedResult} />
+                    )}
+                    {activeTab === 'score' && state.aggregatedResult && (
+                        <ScorePanel result={state.aggregatedResult} />
+                    )}
+                </div>
             </div>
         </div>
     );

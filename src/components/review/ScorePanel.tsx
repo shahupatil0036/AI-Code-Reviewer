@@ -6,6 +6,20 @@ interface ScorePanelProps {
     result: AggregatedResult;
 }
 
+const getColor = (s: number) => {
+    if (s >= 8) return '#10b981';
+    if (s >= 6) return '#06b6d4';
+    if (s >= 4) return '#f59e0b';
+    return '#ef4444';
+};
+
+const getGlowClass = (s: number) => {
+    if (s >= 8) return 'score-glow-green';
+    if (s >= 6) return 'score-glow-cyan';
+    if (s >= 4) return 'score-glow-yellow';
+    return 'score-glow-red';
+};
+
 const CircularScore: React.FC<{ score: number; size?: number }> = ({
     score,
     size = 160,
@@ -16,15 +30,8 @@ const CircularScore: React.FC<{ score: number; size?: number }> = ({
     const percent = (score / 10) * 100;
     const offset = circumference - (percent / 100) * circumference;
 
-    const getColor = (s: number) => {
-        if (s >= 8) return '#10b981';
-        if (s >= 6) return '#06b6d4';
-        if (s >= 4) return '#f59e0b';
-        return '#ef4444';
-    };
-
     return (
-        <div className="relative inline-flex items-center justify-center">
+        <div className={`relative inline-flex items-center justify-center animate-scale-in ${getGlowClass(score)}`}>
             <svg width={size} height={size} className="-rotate-90">
                 <circle
                     cx={size / 2}
@@ -48,7 +55,7 @@ const CircularScore: React.FC<{ score: number; size?: number }> = ({
                 />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold text-text-primary">{score}</span>
+                <span className="text-4xl font-bold text-text-primary tabular-nums">{score}</span>
                 <span className="text-sm text-text-muted">/10</span>
             </div>
         </div>
@@ -65,13 +72,13 @@ const BreakdownBar: React.FC<{
     const percent = (clampedScore / 10) * 100;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 group">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    {icon}
+                    <span className="transition-transform duration-200 group-hover:scale-110">{icon}</span>
                     <span className="text-sm font-medium text-text-primary">{label}</span>
                 </div>
-                <span className="text-sm font-bold text-text-primary">
+                <span className="text-sm font-bold text-text-primary tabular-nums">
                     {clampedScore.toFixed(1)}
                 </span>
             </div>
@@ -113,7 +120,7 @@ const ScorePanel: React.FC<ScorePanelProps> = ({ result }) => {
             {/* Circular Score */}
             <div className="glass-card p-8 flex flex-col items-center gap-4">
                 <CircularScore score={result.overall_score} />
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
                     <Award size={18} className="text-primary-light" />
                     <span
                         className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${rating.color}`}
