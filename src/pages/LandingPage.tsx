@@ -333,13 +333,13 @@ const LandingPage: React.FC = () => {
                         <div>
                             <h4 className="text-sm font-semibold text-text-primary mb-4">Connect</h4>
                             <div className="flex items-center gap-3">
-                                <a href="#" className="w-9 h-9 rounded-lg bg-white/5 border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
+                                <a href="#" className="w-9 h-9 rounded-lg icon-btn-surface border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
                                     <Github size={16} />
                                 </a>
-                                <a href="#" className="w-9 h-9 rounded-lg bg-white/5 border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
+                                <a href="#" className="w-9 h-9 rounded-lg icon-btn-surface border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
                                     <Twitter size={16} />
                                 </a>
-                                <a href="#" className="w-9 h-9 rounded-lg bg-white/5 border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
+                                <a href="#" className="w-9 h-9 rounded-lg icon-btn-surface border border-border/30 flex items-center justify-center text-text-muted hover:text-primary-light hover:border-primary/30 transition-all duration-200 hover-lift">
                                     <Linkedin size={16} />
                                 </a>
                             </div>

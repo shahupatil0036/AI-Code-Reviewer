@@ -54,7 +54,7 @@ const CollapsibleSection: React.FC<{
         <div className="border border-border/30 rounded-xl overflow-hidden">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition-colors duration-200"
+                className="w-full flex items-center justify-between px-4 py-3 hover-surface transition-colors duration-200"
             >
                 <div className="flex items-center gap-2.5">
                     {icon}
@@ -204,13 +204,13 @@ const ModelOutput: React.FC<ModelOutputProps> = ({ result, modelName }) => {
                     </div>
                     <button
                         onClick={handleCopy}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-white/5 transition-all duration-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover-surface transition-all duration-200"
                     >
                         {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                         {copied ? 'Copied!' : 'Copy'}
                     </button>
                 </div>
-                <pre className="p-4 overflow-x-auto text-sm text-text-primary font-mono leading-relaxed bg-black/20">
+                <pre className="p-4 overflow-x-auto text-sm text-text-primary font-mono leading-relaxed code-block-bg">
                     <code>{result.refactored_code}</code>
                 </pre>
             </div>

@@ -37,6 +37,7 @@ const CircularScore: React.FC<{ score: number; size?: number }> = ({
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
+                    className="score-ring-track"
                     stroke="rgba(255,255,255,0.05)"
                     strokeWidth={strokeWidth}
                     fill="none"
@@ -82,7 +83,7 @@ const BreakdownBar: React.FC<{
                     {clampedScore.toFixed(1)}
                 </span>
             </div>
-            <div className="w-full h-2 rounded-full bg-black/30 overflow-hidden">
+            <div className="w-full h-2 rounded-full progress-track overflow-hidden">
                 <div
                     className="h-full rounded-full transition-all duration-1000 ease-out"
                     style={{

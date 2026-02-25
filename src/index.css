@@ -53,6 +53,31 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #6366f1;
   }
+
+  /* ── Theme-aware utility base (dark defaults) ── */
+  .surface-dim {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .progress-track {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  .hover-surface {
+    transition: background-color 0.2s ease;
+  }
+
+  .hover-surface:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .code-block-bg {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .icon-btn-surface {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
 }
 
 @layer utilities {
@@ -473,12 +498,27 @@
 }
 
 /* ── Light Mode Overrides ── */
-.light-mode body,
+/* Override Tailwind v4 custom properties so ALL utilities auto-adapt */
 .light-mode {
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-surface: #f1f5f9;
+  --color-surface-light: #e2e8f0;
+  --color-surface-card: #ffffff;
+  --color-surface-dark: #f8fafc;
+  --color-border: #cbd5e1;
+  --color-border-light: #94a3b8;
   background-color: #f1f5f9;
-  color: #1e293b;
+  color: #0f172a;
 }
 
+.light-mode body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ── Glass card ── */
 .light-mode .glass-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(241, 245, 249, 0.7));
   border-color: rgba(99, 102, 241, 0.15);
@@ -490,6 +530,7 @@
   box-shadow: 0 8px 30px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.1);
 }
 
+/* ── Gradient text ── */
 .light-mode .gradient-text {
   background: linear-gradient(135deg, #6366f1, #0891b2);
   -webkit-background-clip: text;
@@ -497,6 +538,7 @@
   background-clip: text;
 }
 
+/* ── Buttons ── */
 .light-mode .btn-primary {
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
@@ -513,6 +555,7 @@
   color: #ef4444;
 }
 
+/* ── Scrollbar ── */
 .light-mode ::-webkit-scrollbar-track {
   background: #e2e8f0;
 }
@@ -525,12 +568,14 @@
   background: #6366f1;
 }
 
+/* ── Skeleton ── */
 .light-mode .skeleton {
   background: linear-gradient(90deg, rgba(99, 102, 241, 0.06) 25%, rgba(99, 102, 241, 0.12) 50%, rgba(99, 102, 241, 0.06) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite ease-in-out;
 }
 
+/* ── Scroll-to-top ── */
 .light-mode .scroll-to-top-btn {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.9));
   border-color: rgba(99, 102, 241, 0.2);
@@ -543,6 +588,76 @@
   color: white;
 }
 
+/* ── Mobile menu overlay ── */
 .light-mode .mobile-menu-overlay {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Surface dim: replaces bg-black/* for inputs, tracks, overlays ── */
+.light-mode .surface-dim {
+  background-color: rgba(99, 102, 241, 0.04) !important;
+}
+
+/* ── Borders ── */
+.light-mode .border-border\/30,
+.light-mode .border-border\/50,
+.light-mode .border-border\/20 {
+  border-color: rgba(99, 102, 241, 0.12);
+}
+
+/* ── Hover state replacement: white/5 → visible on light ── */
+.light-mode .hover-surface:hover {
+  background-color: rgba(99, 102, 241, 0.06);
+}
+
+/* ── Progress bar tracks ── */
+.light-mode .progress-track {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* ── Floating orbs — more visible on light ── */
+.light-mode .floating-orb {
+  opacity: 0.06;
+}
+
+/* ── Gradient divider ── */
+.light-mode .gradient-divider {
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.2), transparent);
+}
+
+/* ── Hover lift ── */
+.light-mode .hover-lift:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* ── File drop zone ── */
+.light-mode .file-drop-zone {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* ── Social / icon buttons in footer ── */
+.light-mode .icon-btn-surface {
+  background-color: rgba(99, 102, 241, 0.05);
+  border-color: rgba(99, 102, 241, 0.12);
+}
+
+.light-mode .icon-btn-surface:hover {
+  background-color: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* ── Toast ── */
+.light-mode .toast-container>div {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Refactored code block ── */
+.light-mode .code-block-bg {
+  background-color: #f8fafc !important;
+}
+
+/* ── Score ring track in light mode ── */
+.light-mode .score-ring-track {
+  stroke: rgba(99, 102, 241, 0.1) !important;
 }

@@ -301,14 +301,14 @@ const HistoryPage: React.FC = () => {
                             placeholder="Search reviews..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/20 border border-border/30 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl surface-dim border border-border/30 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
                         />
                     </div>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className={`relative flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border ${showFilters || activeFilterCount > 0
                             ? 'bg-primary/10 text-primary-light border-primary/30'
-                            : 'bg-black/20 text-text-muted border-border/30 hover:text-text-primary hover:bg-white/5'
+                            : 'surface-dim text-text-muted border-border/30 hover:text-text-primary hover-surface'
                             }`}
                     >
                         <Filter size={14} />
@@ -337,7 +337,7 @@ const HistoryPage: React.FC = () => {
                                     onClick={() => toggleLanguage(lang)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${selectedLanguages.includes(lang)
                                         ? languageColors[lang]
-                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        : 'surface-dim text-text-muted border-border/20 hover:border-border/40'
                                         }`}
                                 >
                                     {lang.charAt(0).toUpperCase() + lang.slice(1)}
@@ -360,7 +360,7 @@ const HistoryPage: React.FC = () => {
                                     onClick={() => toggleType(type.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${selectedTypes.includes(type.value)
                                         ? 'bg-primary/10 text-primary-light border-primary/30'
-                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        : 'surface-dim text-text-muted border-border/20 hover:border-border/40'
                                         }`}
                                 >
                                     {type.label}
@@ -387,7 +387,7 @@ const HistoryPage: React.FC = () => {
                                     onClick={() => setSortBy(opt.value)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${sortBy === opt.value
                                         ? 'bg-primary/10 text-primary-light border-primary/30'
-                                        : 'bg-black/10 text-text-muted border-border/20 hover:border-border/40'
+                                        : 'surface-dim text-text-muted border-border/20 hover:border-border/40'
                                         }`}
                                 >
                                     {opt.label}
@@ -478,7 +478,7 @@ const HistoryPage: React.FC = () => {
                 <div className="flex items-center justify-center gap-2 mt-8">
                     <button
                         disabled={currentPage === 1}
-                        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                         <ArrowLeft size={14} />
                         Previous
@@ -488,13 +488,13 @@ const HistoryPage: React.FC = () => {
                             key={page}
                             className={`w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200 ${page === currentPage
                                 ? 'bg-primary/15 text-primary-light shadow-sm shadow-primary/10'
-                                : 'text-text-muted hover:text-text-primary hover:bg-white/5'
+                                : 'text-text-muted hover:text-text-primary hover-surface'
                                 }`}
                         >
                             {page}
                         </button>
                     ))}
-                    <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors">
+                    <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-text-muted hover:text-text-primary hover-surface transition-colors">
                         Next
                         <ArrowRight size={14} />
                     </button>

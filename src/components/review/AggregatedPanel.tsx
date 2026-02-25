@@ -40,7 +40,7 @@ const AggregatedPanel: React.FC<AggregatedPanelProps> = ({ result }) => {
                     <span className="text-sm font-medium text-text-secondary">Overall Quality Score</span>
                     <span className="text-2xl font-bold gradient-text">{result.overall_score}/10</span>
                 </div>
-                <div className="w-full h-3 rounded-full bg-black/30 overflow-hidden">
+                <div className="w-full h-3 rounded-full progress-track overflow-hidden">
                     <div
                         className="h-full rounded-full transition-all duration-1000 ease-out"
                         style={{

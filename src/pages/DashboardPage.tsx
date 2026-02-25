@@ -121,7 +121,7 @@ const DashboardPage: React.FC = () => {
                                 <select
                                     value={state.language}
                                     onChange={(e) => setLanguage(e.target.value as Language)}
-                                    className="w-full appearance-none px-4 py-2.5 rounded-xl bg-black/20 border border-border/30 text-sm text-text-primary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all cursor-pointer"
+                                    className="w-full appearance-none px-4 py-2.5 rounded-xl surface-dim border border-border/30 text-sm text-text-primary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all cursor-pointer"
                                 >
                                     {languages.map((lang) => (
                                         <option key={lang.value} value={lang.value} className="bg-surface-dark">
@@ -148,7 +148,7 @@ const DashboardPage: React.FC = () => {
                                         onClick={() => setReviewType(type.value)}
                                         className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${state.reviewType === type.value
                                             ? 'bg-primary/15 text-primary-light border border-primary/30 shadow-sm shadow-primary/10'
-                                            : 'text-text-secondary hover:text-text-primary hover:bg-white/5 border border-transparent'
+                                            : 'text-text-secondary hover:text-text-primary hover-surface border border-transparent'
                                             }`}
                                     >
                                         <span className={`transition-transform duration-200 ${state.reviewType === type.value ? 'scale-110' : 'group-hover:scale-105'}`}>
@@ -197,7 +197,7 @@ const DashboardPage: React.FC = () => {
                         </button>
 
                         {/* Usage Counter */}
-                        <div className="p-3.5 rounded-xl bg-black/20 border border-border/20">
+                        <div className="p-3.5 rounded-xl surface-dim border border-border/20">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-medium text-text-muted">Reviews Today</span>
                                 <Activity size={14} className="text-primary-light" />
@@ -206,7 +206,7 @@ const DashboardPage: React.FC = () => {
                                 <span className="text-xl font-bold text-text-primary">{usageCount}</span>
                                 <span className="text-xs text-text-muted">/ 50</span>
                             </div>
-                            <div className="w-full h-1.5 rounded-full bg-black/30 mt-2 overflow-hidden">
+                            <div className="w-full h-1.5 rounded-full progress-track mt-2 overflow-hidden">
                                 <div
                                     className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-1000"
                                     style={{ width: `${(usageCount / 50) * 100}%` }}
@@ -240,7 +240,7 @@ const DashboardPage: React.FC = () => {
                                         key={idx}
                                         className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-500 ${idx <= progressStep
                                             ? 'bg-primary/10 border border-primary/20'
-                                            : 'bg-black/10 border border-transparent opacity-40'
+                                            : 'surface-dim border border-transparent opacity-40'
                                             }`}
                                     >
                                         <span className={`transition-colors duration-300 ${idx < progressStep ? 'text-green-400' : idx === progressStep ? 'text-primary-light' : 'text-text-muted'}`}>

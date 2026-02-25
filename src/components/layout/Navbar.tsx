@@ -86,7 +86,7 @@ const Navbar: React.FC = () => {
                                 to={link.path}
                                 className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 group/link ${isActive(link.path)
                                     ? 'bg-primary/15 text-primary-light'
-                                    : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+                                    : 'text-text-secondary hover:text-text-primary hover-surface'
                                     }`}
                                 title={link.shortcut}
                             >
@@ -107,7 +107,7 @@ const Navbar: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={toggle}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all duration-200 hover:rotate-12"
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover-surface transition-all duration-200 hover:rotate-12"
                             aria-label="Toggle theme"
                         >
                             {isDark ? <Sun size={18} /> : <Moon size={18} />}
@@ -140,7 +140,7 @@ const Navbar: React.FC = () => {
                         {/* Mobile Hamburger */}
                         <button
                             onClick={() => setMobileOpen(!mobileOpen)}
-                            className="sm:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-white/5 transition-all duration-200"
+                            className="sm:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover-surface transition-all duration-200"
                             aria-label="Toggle menu"
                         >
                             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -169,7 +169,7 @@ const Navbar: React.FC = () => {
                             <span className="text-sm font-semibold text-text-primary">Menu</span>
                             <button
                                 onClick={() => setMobileOpen(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/5 transition-colors"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover-surface transition-colors"
                             >
                                 <X size={18} />
                             </button>
@@ -183,7 +183,7 @@ const Navbar: React.FC = () => {
                                     to={link.path}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive(link.path)
                                         ? 'bg-primary/15 text-primary-light'
-                                        : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+                                        : 'text-text-secondary hover:text-text-primary hover-surface'
                                         }`}
                                 >
                                     {link.icon}
