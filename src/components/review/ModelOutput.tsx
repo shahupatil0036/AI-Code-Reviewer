@@ -83,13 +83,16 @@ const ModelOutput: React.FC<ModelOutputProps> = ({ result, modelName }) => {
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(result.refactored_code);
+            const formattedCode = result.refactored_code.replace(/\\n/g, '\n');
+            await navigator.clipboard.writeText(formattedCode);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
             // Fallback
         }
     };
+
+    const formattedOutputCode = result.refactored_code.replace(/\\n/g, '\n');
 
     return (
         <div className="space-y-4 animate-fade-in">
@@ -210,8 +213,8 @@ const ModelOutput: React.FC<ModelOutputProps> = ({ result, modelName }) => {
                         {copied ? 'Copied!' : 'Copy'}
                     </button>
                 </div>
-                <pre className="p-4 overflow-x-auto text-sm text-text-primary font-mono leading-relaxed code-block-bg">
-                    <code>{result.refactored_code}</code>
+                <pre className="p-4 overflow-x-auto whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed code-block-bg">
+                    <code>{formattedOutputCode}</code>
                 </pre>
             </div>
         </div>

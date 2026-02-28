@@ -63,8 +63,10 @@ export type ReviewActionType =
     | { type: 'SET_LANGUAGE'; payload: Language }
     | { type: 'SET_REVIEW_TYPE'; payload: ReviewType }
     | { type: 'SET_CODE'; payload: string }
-    | { type: 'SET_OPENAI_RESULT'; payload: ReviewResult }
-    | { type: 'SET_CLAUDE_RESULT'; payload: ReviewResult }
+    | { type: 'SET_GROQ_RESULT'; payload: ReviewResult }
+    | { type: 'SET_GEMINI_RESULT'; payload: ReviewResult }
+    | { type: 'SET_GEMINI_FLASH_RESULT'; payload: ReviewResult }
+    | { type: 'SET_QWEN3_CODER_RESULT'; payload: ReviewResult }
     | { type: 'SET_AGGREGATED_RESULT'; payload: AggregatedResult }
     | { type: 'SET_ERROR'; payload: string | null }
     | { type: 'CLEAR_RESULTS' };
@@ -74,8 +76,10 @@ export interface ReviewState {
     language: Language;
     reviewType: ReviewType;
     code: string;
-    openaiResult: ReviewResult | null;
-    claudeResult: ReviewResult | null;
+    groqResult: ReviewResult | null;
+    geminiResult: ReviewResult | null;
+    geminiFlashResult: ReviewResult | null;
+    qwen3CoderResult: ReviewResult | null;
     aggregatedResult: AggregatedResult | null;
     error: string | null;
 }
@@ -87,7 +91,9 @@ export interface HistoryItem {
     code: string;
     score: number;
     timestamp: string;
-    openaiResult: ReviewResult;
-    claudeResult: ReviewResult;
+    groqResult: ReviewResult;
+    geminiResult: ReviewResult;
+    geminiFlashResult: ReviewResult;
+    qwen3CoderResult: ReviewResult;
     aggregatedResult: AggregatedResult;
 }

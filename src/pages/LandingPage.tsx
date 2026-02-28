@@ -24,7 +24,7 @@ const features = [
         icon: <Layers size={24} />,
         title: 'Multi-LLM Comparison',
         description:
-            'Get parallel analysis from OpenAI and Claude. Compare findings and spot issues no single model catches alone.',
+            'Get parallel analysis from Gemini and Claude. Compare findings and spot issues no single model catches alone.',
         color: 'from-indigo-500 to-purple-500',
     },
     {

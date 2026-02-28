@@ -1,5 +1,5 @@
 import morgan from "morgan";
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 
 /**
  * Request logger — uses "dev" format locally for concise coloured output,

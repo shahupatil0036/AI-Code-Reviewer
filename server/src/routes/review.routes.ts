@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { handleReview } from "../controllers/review.controller.js";
-import { validateRequest } from "../middleware/validateRequest.js";
-import { reviewRequestSchema } from "../types/review.types.js";
+import { handleReview } from "../controllers/review.controller";
+import { validateRequest } from "../middleware/validateRequest";
+import { reviewRequestSchema } from "../types/review.types";
 
 const router = Router();
 

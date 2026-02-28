@@ -3,9 +3,9 @@ import { useReview } from '../../context/ReviewContext';
 import ModelOutput from './ModelOutput';
 import AggregatedPanel from './AggregatedPanel';
 import ScorePanel from './ScorePanel';
-import { Bot, Cpu, BarChart3, Target } from 'lucide-react';
+import { Bot, Sparkles, BarChart3, Target, Zap, Cpu } from 'lucide-react';
 
-type TabId = 'openai' | 'claude' | 'aggregated' | 'score';
+type TabId = 'groq' | 'gemini' | 'geminiFlash' | 'qwen3Coder' | 'aggregated' | 'score';
 
 interface Tab {
     id: TabId;
@@ -14,24 +14,28 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-    { id: 'openai', label: 'OpenAI', icon: <Bot size={16} /> },
-    { id: 'claude', label: 'Claude', icon: <Cpu size={16} /> },
+    { id: 'groq', label: 'Llama 3.3 70B', icon: <Bot size={16} /> },
+    { id: 'gemini', label: 'Gemini 2.5 Flash', icon: <Sparkles size={16} /> },
+    { id: 'geminiFlash', label: 'Gemini 3 Flash', icon: <Zap size={16} /> },
+    { id: 'qwen3Coder', label: 'Qwen3 Coder', icon: <Cpu size={16} /> },
     { id: 'aggregated', label: 'Aggregated Summary', icon: <BarChart3 size={16} /> },
     { id: 'score', label: 'Score', icon: <Target size={16} /> },
 ];
 
 const ReviewTabs: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<TabId>('openai');
+    const [activeTab, setActiveTab] = useState<TabId>('groq');
     const { state } = useReview();
     const tabRefs = useRef<Record<TabId, HTMLButtonElement | null>>({
-        openai: null,
-        claude: null,
+        groq: null,
+        gemini: null,
+        geminiFlash: null,
+        qwen3Coder: null,
         aggregated: null,
         score: null,
     });
     const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
 
-    const hasResults = state.openaiResult || state.claudeResult || state.aggregatedResult;
+    const hasResults = state.groqResult || state.geminiResult || state.geminiFlashResult || state.qwen3CoderResult || state.aggregatedResult;
 
     // Update sliding indicator position
     useEffect(() => {
@@ -91,17 +95,29 @@ const ReviewTabs: React.FC = () => {
             {/* Tab Content */}
             <div className="p-5">
                 <div className="animate-fade-in" key={activeTab}>
-                    {activeTab === 'openai' && state.openaiResult && (
-                        <ModelOutput result={state.openaiResult} modelName="OpenAI GPT-4" />
+                    {activeTab === 'groq' && state.groqResult && (
+                        <ModelOutput result={state.groqResult} modelName="Groq Llama 3.3 70B" />
                     )}
-                    {activeTab === 'claude' && state.claudeResult && (
-                        <ModelOutput result={state.claudeResult} modelName="Anthropic Claude" />
+                    {activeTab === 'gemini' && state.geminiResult && (
+                        <ModelOutput result={state.geminiResult} modelName="Google Gemini 2.5 Flash" />
+                    )}
+                    {activeTab === 'geminiFlash' && state.geminiFlashResult && (
+                        <ModelOutput result={state.geminiFlashResult} modelName="Google Gemini 3 Flash Preview" />
+                    )}
+                    {activeTab === 'qwen3Coder' && state.qwen3CoderResult && (
+                        <ModelOutput result={state.qwen3CoderResult} modelName="Qwen3 Coder" />
                     )}
                     {activeTab === 'aggregated' && state.aggregatedResult && (
                         <AggregatedPanel result={state.aggregatedResult} />
                     )}
                     {activeTab === 'score' && state.aggregatedResult && (
-                        <ScorePanel result={state.aggregatedResult} />
+                        <ScorePanel
+                            result={state.aggregatedResult}
+                            groqScore={state.groqResult?.score}
+                            geminiScore={state.geminiResult?.score}
+                            geminiFlashScore={state.geminiFlashResult?.score}
+                            qwen3CoderScore={state.qwen3CoderResult?.score}
+                        />
                     )}
                 </div>
             </div>

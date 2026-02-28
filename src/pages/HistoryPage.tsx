@@ -24,7 +24,7 @@ const mockHistory: HistoryItem[] = [
         code: 'function processData(data: any[]) { return data.filter(Boolean); }',
         score: 8,
         timestamp: '2026-02-21T10:30:00Z',
-        openaiResult: {
+        groqResult: {
             bugs: [{ id: 'b1', line: 1, severity: 'warning', message: 'Using any type', suggestion: 'Use generic type' }],
             security_issues: [],
             performance_issues: [],
@@ -32,8 +32,24 @@ const mockHistory: HistoryItem[] = [
             score: 8,
             confidence: 'High',
         },
-        claudeResult: {
+        geminiResult: {
             bugs: [{ id: 'b2', line: 1, severity: 'info', message: 'Consider strict typing', suggestion: 'Define interface' }],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 8,
+            confidence: 'High',
+        },
+        geminiFlashResult: {
+            bugs: [{ id: 'b2f', line: 1, severity: 'info', message: 'Typing could be stricter', suggestion: 'Use specific types' }],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 8,
+            confidence: 'High',
+        },
+        qwen3CoderResult: {
+            bugs: [],
             security_issues: [],
             performance_issues: [],
             refactored_code: '',
@@ -56,7 +72,7 @@ const mockHistory: HistoryItem[] = [
         code: 'import sqlite3\ndef query(user_input):\n  conn = sqlite3.connect("db.sqlite")\n  conn.execute(f"SELECT * FROM users WHERE name = \'{user_input}\'")',
         score: 4,
         timestamp: '2026-02-20T15:45:00Z',
-        openaiResult: {
+        groqResult: {
             bugs: [{ id: 'b3', line: 4, severity: 'critical', message: 'SQL Injection vulnerability', suggestion: 'Use parameterized queries' }],
             security_issues: [{ id: 's1', type: 'Injection', severity: 'critical', description: 'Raw SQL with string interpolation', recommendation: 'Use parameterized queries' }],
             performance_issues: [],
@@ -64,12 +80,28 @@ const mockHistory: HistoryItem[] = [
             score: 4,
             confidence: 'High',
         },
-        claudeResult: {
+        geminiResult: {
             bugs: [{ id: 'b4', line: 4, severity: 'critical', message: 'SQL Injection risk', suggestion: 'Sanitize inputs' }],
             security_issues: [{ id: 's2', type: 'Injection', severity: 'critical', description: 'Unsanitized user input in SQL query', recommendation: 'Use prepared statements' }],
             performance_issues: [],
             refactored_code: '',
             score: 3,
+            confidence: 'High',
+        },
+        geminiFlashResult: {
+            bugs: [{ id: 'b4f', line: 4, severity: 'critical', message: 'Immediate SQL injection', suggestion: 'Fix interpolation' }],
+            security_issues: [{ id: 's2f', type: 'Injection', severity: 'critical', description: 'Unsanitized input', recommendation: 'Use prepared statements' }],
+            performance_issues: [],
+            refactored_code: '',
+            score: 4,
+            confidence: 'High',
+        },
+        qwen3CoderResult: {
+            bugs: [{ id: 'b4q', line: 4, severity: 'critical', message: 'Immediate SQL injection', suggestion: 'Fix interpolation' }],
+            security_issues: [{ id: 's2q', type: 'Injection', severity: 'critical', description: 'Unsanitized input', recommendation: 'Use prepared statements' }],
+            performance_issues: [],
+            refactored_code: '',
+            score: 4,
             confidence: 'High',
         },
         aggregatedResult: {
@@ -88,7 +120,7 @@ const mockHistory: HistoryItem[] = [
         code: 'const arr = [];\nfor (let i = 0; i < 100000; i++) {\n  arr.push(heavyComputation(i));\n}',
         score: 6,
         timestamp: '2026-02-20T09:20:00Z',
-        openaiResult: {
+        groqResult: {
             bugs: [],
             security_issues: [],
             performance_issues: [{ id: 'p1', area: 'Complexity', impact: 'high', description: 'Synchronous heavy computation in loop', suggestion: 'Use Web Workers or chunking' }],
@@ -96,12 +128,28 @@ const mockHistory: HistoryItem[] = [
             score: 6,
             confidence: 'Medium',
         },
-        claudeResult: {
+        geminiResult: {
             bugs: [],
             security_issues: [],
             performance_issues: [{ id: 'p2', area: 'Memory', impact: 'high', description: 'Large array allocation', suggestion: 'Use streaming or generators' }],
             refactored_code: '',
             score: 6,
+            confidence: 'Medium',
+        },
+        geminiFlashResult: {
+            bugs: [],
+            security_issues: [],
+            performance_issues: [{ id: 'p2f', area: 'Memory', impact: 'high', description: 'Too much memory allocated in loop', suggestion: 'Stream results' }],
+            refactored_code: '',
+            score: 5,
+            confidence: 'Medium',
+        },
+        qwen3CoderResult: {
+            bugs: [],
+            security_issues: [],
+            performance_issues: [{ id: 'p2q', area: 'Memory', impact: 'high', description: 'Too much memory allocated in loop', suggestion: 'Stream results' }],
+            refactored_code: '',
+            score: 5,
             confidence: 'Medium',
         },
         aggregatedResult: {
@@ -120,7 +168,7 @@ const mockHistory: HistoryItem[] = [
         code: 'public String getName() {\n  return this.user.getProfile().getName();\n}',
         score: 5,
         timestamp: '2026-02-19T14:00:00Z',
-        openaiResult: {
+        groqResult: {
             bugs: [{ id: 'b5', line: 2, severity: 'critical', message: 'Potential NullPointerException', suggestion: 'Add null checks or use Optional' }],
             security_issues: [],
             performance_issues: [],
@@ -128,8 +176,24 @@ const mockHistory: HistoryItem[] = [
             score: 5,
             confidence: 'High',
         },
-        claudeResult: {
+        geminiResult: {
             bugs: [{ id: 'b6', line: 2, severity: 'critical', message: 'Chained method calls without null safety', suggestion: 'Use Optional.ofNullable()' }],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 5,
+            confidence: 'High',
+        },
+        geminiFlashResult: {
+            bugs: [{ id: 'b6f', line: 2, severity: 'critical', message: 'Unsafe chaining', suggestion: 'Add null-checks between calls' }],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 5,
+            confidence: 'High',
+        },
+        qwen3CoderResult: {
+            bugs: [{ id: 'b6q', line: 2, severity: 'critical', message: 'Unsafe chaining', suggestion: 'Add null-checks between calls' }],
             security_issues: [],
             performance_issues: [],
             refactored_code: '',
@@ -152,7 +216,7 @@ const mockHistory: HistoryItem[] = [
         code: 'suspend fun fetchUsers(): List<User> = withContext(Dispatchers.IO) {\n  api.getUsers().also { cache.save(it) }\n}',
         score: 9,
         timestamp: '2026-02-19T08:15:00Z',
-        openaiResult: {
+        groqResult: {
             bugs: [],
             security_issues: [],
             performance_issues: [],
@@ -160,7 +224,23 @@ const mockHistory: HistoryItem[] = [
             score: 9,
             confidence: 'High',
         },
-        claudeResult: {
+        geminiResult: {
+            bugs: [],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 9,
+            confidence: 'High',
+        },
+        geminiFlashResult: {
+            bugs: [],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: '',
+            score: 9,
+            confidence: 'High',
+        },
+        qwen3CoderResult: {
             bugs: [],
             security_issues: [],
             performance_issues: [],
@@ -272,7 +352,7 @@ const HistoryPage: React.FC = () => {
         setCode(item.code);
         setLanguage(item.language);
         setReviewType(item.reviewType);
-        setResults(item.openaiResult, item.claudeResult, item.aggregatedResult);
+        setResults(item.groqResult, item.geminiResult, item.geminiFlashResult, item.qwen3CoderResult, item.aggregatedResult);
         navigate('/dashboard');
     };
 

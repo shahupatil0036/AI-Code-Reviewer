@@ -14,8 +14,10 @@ const initialState: ReviewState = {
     language: 'javascript',
     reviewType: 'full_review',
     code: '',
-    openaiResult: null,
-    claudeResult: null,
+    groqResult: null,
+    geminiResult: null,
+    geminiFlashResult: null,
+    qwen3CoderResult: null,
     aggregatedResult: null,
     error: null,
 };
@@ -30,10 +32,14 @@ function reviewReducer(state: ReviewState, action: ReviewActionType): ReviewStat
             return { ...state, reviewType: action.payload };
         case 'SET_CODE':
             return { ...state, code: action.payload };
-        case 'SET_OPENAI_RESULT':
-            return { ...state, openaiResult: action.payload };
-        case 'SET_CLAUDE_RESULT':
-            return { ...state, claudeResult: action.payload };
+        case 'SET_GROQ_RESULT':
+            return { ...state, groqResult: action.payload };
+        case 'SET_GEMINI_RESULT':
+            return { ...state, geminiResult: action.payload };
+        case 'SET_GEMINI_FLASH_RESULT':
+            return { ...state, geminiFlashResult: action.payload };
+        case 'SET_QWEN3_CODER_RESULT':
+            return { ...state, qwen3CoderResult: action.payload };
         case 'SET_AGGREGATED_RESULT':
             return { ...state, aggregatedResult: action.payload };
         case 'SET_ERROR':
@@ -41,8 +47,10 @@ function reviewReducer(state: ReviewState, action: ReviewActionType): ReviewStat
         case 'CLEAR_RESULTS':
             return {
                 ...state,
-                openaiResult: null,
-                claudeResult: null,
+                groqResult: null,
+                geminiResult: null,
+                geminiFlashResult: null,
+                qwen3CoderResult: null,
                 aggregatedResult: null,
                 error: null,
                 code: '',
@@ -60,8 +68,10 @@ interface ReviewContextValue {
     analyzeCode: () => Promise<void>;
     clearResults: () => void;
     setResults: (
-        openai: ReviewResult,
-        claude: ReviewResult,
+        groq: ReviewResult,
+        gemini: ReviewResult,
+        geminiFlash: ReviewResult,
+        qwen3Coder: ReviewResult,
         aggregated: AggregatedResult
     ) => void;
 }
@@ -88,9 +98,11 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }, []);
 
     const setResults = useCallback(
-        (openai: ReviewResult, claude: ReviewResult, aggregated: AggregatedResult) => {
-            dispatch({ type: 'SET_OPENAI_RESULT', payload: openai });
-            dispatch({ type: 'SET_CLAUDE_RESULT', payload: claude });
+        (groq: ReviewResult, gemini: ReviewResult, geminiFlash: ReviewResult, qwen3Coder: ReviewResult, aggregated: AggregatedResult) => {
+            dispatch({ type: 'SET_GROQ_RESULT', payload: groq });
+            dispatch({ type: 'SET_GEMINI_RESULT', payload: gemini });
+            dispatch({ type: 'SET_GEMINI_FLASH_RESULT', payload: geminiFlash });
+            dispatch({ type: 'SET_QWEN3_CODER_RESULT', payload: qwen3Coder });
             dispatch({ type: 'SET_AGGREGATED_RESULT', payload: aggregated });
         },
         []
@@ -123,8 +135,10 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 controller.signal
             );
 
-            dispatch({ type: 'SET_OPENAI_RESULT', payload: result.openaiResult });
-            dispatch({ type: 'SET_CLAUDE_RESULT', payload: result.claudeResult });
+            dispatch({ type: 'SET_GROQ_RESULT', payload: result.groqResult });
+            dispatch({ type: 'SET_GEMINI_RESULT', payload: result.geminiResult });
+            dispatch({ type: 'SET_GEMINI_FLASH_RESULT', payload: result.geminiFlashResult });
+            dispatch({ type: 'SET_QWEN3_CODER_RESULT', payload: result.qwen3CoderResult });
             dispatch({ type: 'SET_AGGREGATED_RESULT', payload: result.aggregatedResult });
         } catch (err) {
             // Ignore abort errors (user cancelled or started a new request)
@@ -153,6 +167,7 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useReview = (): ReviewContextValue => {
     const context = useContext(ReviewContext);
     if (!context) {

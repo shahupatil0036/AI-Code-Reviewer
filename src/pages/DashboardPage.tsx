@@ -38,20 +38,21 @@ const reviewTypes: { value: ReviewType; label: string; icon: React.ReactNode; de
 ];
 
 const analysisSteps = [
-    { icon: <Sparkles size={16} />, label: 'Sending to OpenAI GPT-4...' },
-    { icon: <Brain size={16} />, label: 'Analyzing with Claude...' },
+    { icon: <Sparkles size={16} />, label: 'Sending to Google Gemini...' },
+    { icon: <Brain size={16} />, label: 'Analyzing with Llama & Gemini Flash...' },
     { icon: <CheckCircle2 size={16} />, label: 'Aggregating results...' },
 ];
 
 const DashboardPage: React.FC = () => {
     const { state, setCode, setLanguage, setReviewType, analyzeCode, clearResults } = useReview();
     const { addToast } = useToast();
-    const [usageCount] = useState(12);
+    const [usageCount, setUsageCount] = useState(12);
     const [progressStep, setProgressStep] = useState(0);
 
     // Simulate progress steps during loading
     useEffect(() => {
         if (!state.loading) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setProgressStep(0);
             return;
         }
@@ -64,6 +65,7 @@ const DashboardPage: React.FC = () => {
     const handleAnalyze = async () => {
         try {
             await analyzeCode();
+            setUsageCount((prev) => Math.min(prev + 1, 50));
             addToast('success', 'Code analysis completed successfully!');
         } catch {
             addToast('error', 'Analysis failed. Please try again.');

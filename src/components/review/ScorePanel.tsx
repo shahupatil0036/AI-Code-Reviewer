@@ -1,9 +1,13 @@
 import React from 'react';
 import type { AggregatedResult } from '../../types';
-import { Award, Bug, Shield, Zap, TrendingUp } from 'lucide-react';
+import { Award, Bot, Sparkles, Zap, TrendingUp } from 'lucide-react';
 
 interface ScorePanelProps {
     result: AggregatedResult;
+    groqScore?: number;
+    geminiScore?: number;
+    geminiFlashScore?: number;
+    qwen3CoderScore?: number;
 }
 
 const getColor = (s: number) => {
@@ -96,7 +100,7 @@ const BreakdownBar: React.FC<{
     );
 };
 
-const ScorePanel: React.FC<ScorePanelProps> = ({ result }) => {
+const ScorePanel: React.FC<ScorePanelProps> = ({ result, groqScore = 0, geminiScore = 0, geminiFlashScore = 0, qwen3CoderScore = 0 }) => {
     const getRatingBadge = (score: number) => {
         if (score >= 8) return { label: 'Excellent', color: 'bg-green-500/10 text-green-400 border-green-500/20' };
         if (score >= 6) return { label: 'Good', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' };
@@ -131,29 +135,35 @@ const ScorePanel: React.FC<ScorePanelProps> = ({ result }) => {
                 </div>
             </div>
 
-            {/* Score Breakdown */}
+            {/* Score Breakdown (By Model) */}
             <div className="glass-card p-5 space-y-5">
                 <h4 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                     <TrendingUp size={16} className="text-primary-light" />
-                    Score Breakdown
+                    Model Score Comparison
                 </h4>
                 <BreakdownBar
-                    label="Bug Detection"
-                    score={result.score_breakdown.bugs}
-                    icon={<Bug size={14} className="text-red-400" />}
+                    label="Llama 3.3 70B"
+                    score={groqScore}
+                    icon={<Bot size={14} className="text-red-400" />}
                     color="linear-gradient(90deg, #ef4444, #f87171)"
                 />
                 <BreakdownBar
-                    label="Security"
-                    score={result.score_breakdown.security}
-                    icon={<Shield size={14} className="text-yellow-400" />}
+                    label="Gemini 2.5 Flash"
+                    score={geminiScore}
+                    icon={<Sparkles size={14} className="text-yellow-400" />}
                     color="linear-gradient(90deg, #f59e0b, #fbbf24)"
                 />
                 <BreakdownBar
-                    label="Performance"
-                    score={result.score_breakdown.performance}
+                    label="Gemini 3 Flash"
+                    score={geminiFlashScore}
                     icon={<Zap size={14} className="text-cyan-400" />}
                     color="linear-gradient(90deg, #06b6d4, #22d3ee)"
+                />
+                <BreakdownBar
+                    label="Qwen3 Coder"
+                    score={qwen3CoderScore}
+                    icon={<Zap size={14} className="text-purple-400" />}
+                    color="linear-gradient(90deg, #a855f7, #d946ef)"
                 />
             </div>
 

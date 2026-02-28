@@ -18,7 +18,7 @@ export const reviewRequestSchema = z.object({
 
 export type ReviewRequest = z.infer<typeof reviewRequestSchema>;
 
-// ── OpenAI Response Shape ──────────────────────────────────────────────
+// ── Groq Response Shape ───────────────────────────────────────────────
 
 export interface ReviewBug {
     line?: number | null;
@@ -43,6 +43,8 @@ export interface ReviewResult {
     refactored_code: string;
     score: number;
     confidence: string;
+    _error?: string;
+    error?: string;
 }
 
 // ── API Response Envelope ──────────────────────────────────────────────
@@ -58,3 +60,21 @@ export interface ApiErrorResponse {
 }
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+// ── Multi-Model Result Types ──────────────────────────────────────────
+
+export interface AggregatedResult {
+    aggregated_bugs: ReviewBug[];
+    aggregated_security: SecurityIssue[];
+    aggregated_performance: PerformanceIssue[];
+    average_score: number;
+    final_confidence: string;
+}
+
+export interface MultiModelResult {
+    groq: ReviewResult | null;
+    gemini: ReviewResult | null;
+    geminiFlash: ReviewResult | null;
+    qwen3Coder: ReviewResult | { error: string } | null;
+    aggregated: AggregatedResult;
+}

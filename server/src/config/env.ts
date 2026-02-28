@@ -1,7 +1,12 @@
 import { z } from "zod";
 
+if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("Missing OPENROUTER_API_KEY");
+}
+
 const envSchema = z.object({
-    OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
+    GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
+    GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
     PORT: z.coerce.number().default(5000),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     CORS_ORIGIN: z.string().default("*"),

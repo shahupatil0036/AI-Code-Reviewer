@@ -1,5 +1,6 @@
-import app from "./app.js";
-import { env } from "./config/env.js";
+import "dotenv/config"; // Must be first — loads .env before any module reads process.env
+import app from "./app";
+import { env } from "./config/env";
 
 const PORT = env.PORT;
 
@@ -24,4 +25,14 @@ process.on("unhandledRejection", (reason) => {
 
 process.on("uncaughtException", (error) => {
     gracefulShutdown("Uncaught Exception", error);
+});
+
+process.on("SIGTERM", () => {
+    console.log("👋 SIGTERM received. Shutting down gracefully...");
+    server.close(() => process.exit(0));
+});
+
+process.on("SIGINT", () => {
+    console.log("👋 SIGINT received. Shutting down gracefully...");
+    server.close(() => process.exit(0));
 });

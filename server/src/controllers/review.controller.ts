@@ -1,12 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
-import { performReview } from "../services/review.service.js";
-import type { ReviewRequest } from "../types/review.types.js";
+import { performReview } from "../services/review.service";
+import type { ReviewRequest } from "../types/review.types";
 
 /**
  * POST /api/review
  *
  * Expects a validated body of type ReviewRequest.
- * Returns a structured JSON response.
+ * Returns multi-model results: { groq, gemini, aggregated }.
  */
 export async function handleReview(
     req: Request,

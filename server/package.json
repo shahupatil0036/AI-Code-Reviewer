@@ -1,21 +1,22 @@
 {
     "name": "ai-code-reviewer-server",
     "version": "1.0.0",
-    "description": "Production-ready Node.js backend for AI Code Reviewer",
+    "description": "Production-ready Node.js backend for AI Code Reviewer using Groq and Google Gemini APIs",
     "main": "dist/server.js",
     "scripts": {
-        "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+        "dev": "tsx watch src/server.ts",
         "build": "tsc",
         "start": "node dist/server.js"
     },
     "dependencies": {
+        "@google/generative-ai": "^0.24.1",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "express-rate-limit": "^7.5.0",
+        "groq-sdk": "^0.8.0",
         "helmet": "^8.0.0",
         "morgan": "^1.10.0",
-        "openai": "^4.77.0",
         "zod": "^3.24.1"
     },
     "devDependencies": {
@@ -23,7 +24,7 @@
         "@types/express": "^5.0.0",
         "@types/morgan": "^1.9.9",
         "@types/node": "^22.10.5",
-        "ts-node-dev": "^2.0.0",
+        "tsx": "^4.7.0",
         "typescript": "^5.7.3"
     }
 }

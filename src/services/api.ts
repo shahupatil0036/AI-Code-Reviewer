@@ -29,11 +29,28 @@ interface BackendReviewResult {
     refactored_code: string;
     score: number;
     confidence: string;
+    _error?: string;
+}
+
+interface BackendAggregatedResult {
+    aggregated_bugs: BackendBug[];
+    aggregated_security: BackendSecurityIssue[];
+    aggregated_performance: BackendPerformanceIssue[];
+    average_score: number;
+    final_confidence: string;
+}
+
+interface BackendMultiModelResponse {
+    groq: BackendReviewResult | null;
+    gemini: BackendReviewResult | null;
+    geminiFlash: BackendReviewResult | null;
+    qwen3Coder: BackendReviewResult | { error: string } | null;
+    aggregated: BackendAggregatedResult;
 }
 
 interface BackendApiResponse {
     success: boolean;
-    data?: BackendReviewResult;
+    data?: BackendMultiModelResponse;
     error?: string;
 }
 
@@ -41,6 +58,7 @@ interface BackendApiResponse {
 
 let idCounter = 0;
 const nextId = (prefix: string) => `${prefix}-${++idCounter}`;
+const resetIdCounter = () => { idCounter = 0; };
 
 function mapSeverityToBug(severity: string): BugIssue['severity'] {
     if (severity === 'critical' || severity === 'high') return 'critical';
@@ -55,10 +73,11 @@ function mapSeverityToSecurity(severity: string): SecurityIssue['severity'] {
         : 'medium';
 }
 
-function mapImpact(severity: string): PerformanceIssue['impact'] {
-    if (severity === 'high' || severity === 'critical') return 'high';
-    if (severity === 'medium') return 'medium';
-    return 'low';
+function mapImpact(description: string): PerformanceIssue['impact'] {
+    const lower = description.toLowerCase();
+    if (lower.includes('critical') || lower.includes('severe') || lower.includes('memory leak') || lower.includes('o(n²)') || lower.includes('o(n^2)')) return 'high';
+    if (lower.includes('minor') || lower.includes('negligible') || lower.includes('cosmetic')) return 'low';
+    return 'medium';
 }
 
 function mapBackendToFrontend(backend: BackendReviewResult): ReviewResult {
@@ -80,7 +99,7 @@ function mapBackendToFrontend(backend: BackendReviewResult): ReviewResult {
         performance_issues: backend.performance_issues.map((p) => ({
             id: nextId('perf'),
             area: 'General',
-            impact: mapImpact('medium'),
+            impact: mapImpact(p.description),
             description: p.description,
             suggestion: p.suggestion,
         })),
@@ -90,20 +109,15 @@ function mapBackendToFrontend(backend: BackendReviewResult): ReviewResult {
     };
 }
 
-function generateAggregatedResult(
-    openai: ReviewResult,
-    claude: ReviewResult
-): AggregatedResult {
-    const avgScore = Math.round((openai.score + claude.score) / 2);
-    const totalBugs = openai.bugs.length + claude.bugs.length;
-    const totalSecurity = openai.security_issues.length + claude.security_issues.length;
+function mapBackendAggregated(backend: BackendAggregatedResult): AggregatedResult {
+    const totalBugs = backend.aggregated_bugs.length;
+    const totalSecurity = backend.aggregated_security.length;
+    const totalPerf = backend.aggregated_performance.length;
 
     const criticalIssues: string[] = [];
     if (totalBugs > 0) criticalIssues.push(`${totalBugs} bug(s) detected across analysis`);
     if (totalSecurity > 0) criticalIssues.push(`${totalSecurity} security concern(s) identified`);
-    if (openai.performance_issues.length + claude.performance_issues.length > 0) {
-        criticalIssues.push('Performance bottlenecks detected');
-    }
+    if (totalPerf > 0) criticalIssues.push('Performance bottlenecks detected');
 
     const recommendations: string[] = [];
     if (totalBugs > 0) recommendations.push('Fix all reported bugs before deployment');
@@ -111,17 +125,31 @@ function generateAggregatedResult(
     recommendations.push('Consider adding unit tests for critical paths');
 
     return {
-        overall_score: avgScore,
+        overall_score: backend.average_score,
         critical_issues: criticalIssues.length > 0 ? criticalIssues : ['No critical issues found'],
         recommendations,
-        executive_summary: `AI analysis reveals a codebase with a quality score of ${avgScore}/10. ${totalBugs} potential bug(s) and ${totalSecurity} security concern(s) were identified.`,
-        risk_level: avgScore >= 7 ? 'Low' : avgScore >= 5 ? 'Medium' : 'High',
+        executive_summary: `AI analysis reveals a codebase with a quality score of ${backend.average_score}/10. ${totalBugs} potential bug(s) and ${totalSecurity} security concern(s) were identified.`,
+        risk_level: backend.average_score >= 7 ? 'Low' : backend.average_score >= 5 ? 'Medium' : 'High',
         score_breakdown: {
             bugs: Math.max(Math.round((10 - totalBugs * 1.5) * 10) / 10, 0),
             security: Math.max(Math.round((10 - totalSecurity * 2) * 10) / 10, 0),
-            performance: Math.round((avgScore + 1) * 10) / 10,
+            performance: Math.round((backend.average_score + 1) * 10) / 10,
         },
     };
+}
+
+function mapQwenBackendToFrontend(backend: BackendReviewResult | { error: string }): ReviewResult {
+    if ('error' in backend) {
+        return {
+            bugs: [],
+            security_issues: [],
+            performance_issues: [],
+            refactored_code: `// ${backend.error}`,
+            score: 0,
+            confidence: "Low"
+        };
+    }
+    return mapBackendToFrontend(backend);
 }
 
 // ── Mock generators (fallback for demo mode) ────────────────────────────
@@ -196,16 +224,39 @@ const generateMockResult = (language: string): ReviewResult => ({
     confidence: (['High', 'Medium'] as const)[Math.floor(Math.random() * 2)],
 });
 
+function generateMockAggregated(groq: ReviewResult, gemini: ReviewResult, geminiFlash: ReviewResult, qwen: ReviewResult): AggregatedResult {
+    const avgScore = Math.round((groq.score + gemini.score + geminiFlash.score + qwen.score) / 4);
+    const totalBugs = groq.bugs.length + gemini.bugs.length + geminiFlash.bugs.length + qwen.bugs.length;
+    const totalSecurity = groq.security_issues.length + gemini.security_issues.length + geminiFlash.security_issues.length + qwen.security_issues.length;
+
+    return {
+        overall_score: avgScore,
+        critical_issues: totalBugs > 0 ? [`${totalBugs} bug(s) detected`] : ['No critical issues found'],
+        recommendations: ['Fix all reported bugs', 'Add unit tests'],
+        executive_summary: `Quality score of ${avgScore}/10. ${totalBugs} bug(s) and ${totalSecurity} security concern(s) identified.`,
+        risk_level: avgScore >= 7 ? 'Low' : avgScore >= 5 ? 'Medium' : 'High',
+        score_breakdown: {
+            bugs: Math.max(Math.round((10 - totalBugs * 1.5) * 10) / 10, 0),
+            security: Math.max(Math.round((10 - totalSecurity * 2) * 10) / 10, 0),
+            performance: Math.round((avgScore + 1) * 10) / 10,
+        },
+    };
+}
+
 // ── Main API function ───────────────────────────────────────────────────
 
 export const submitReview = async (
     payload: ReviewPayload,
     signal?: AbortSignal
 ): Promise<{
-    openaiResult: ReviewResult;
-    claudeResult: ReviewResult;
+    groqResult: ReviewResult;
+    geminiResult: ReviewResult;
+    geminiFlashResult: ReviewResult;
+    qwen3CoderResult: ReviewResult;
     aggregatedResult: AggregatedResult;
 }> => {
+    resetIdCounter();
+
     if (!payload.code.trim()) {
         throw new Error('Code content cannot be empty');
     }
@@ -241,14 +292,29 @@ export const submitReview = async (
             throw new Error(json.error || 'Unexpected server response');
         }
 
-        // Map backend response to frontend types
-        // Use the same result for both "models" since
-        // the backend currently only has one model (OpenAI)
-        const openaiResult = mapBackendToFrontend(json.data);
-        const claudeResult = mapBackendToFrontend(json.data);
-        const aggregatedResult = generateAggregatedResult(openaiResult, claudeResult);
+        const { data } = json;
 
-        return { openaiResult, claudeResult, aggregatedResult };
+        // Map each model result (handle partial failures)
+        const groqResult = data.groq
+            ? mapBackendToFrontend(data.groq)
+            : generateMockResult(payload.language); // fallback if Groq failed
+
+        const geminiResult = data.gemini
+            ? mapBackendToFrontend(data.gemini)
+            : generateMockResult(payload.language); // fallback if Gemini failed
+
+        const geminiFlashResult = data.geminiFlash
+            ? mapBackendToFrontend(data.geminiFlash)
+            : generateMockResult(payload.language); // fallback if Flash failed
+
+        const qwen3CoderResult = data.qwen3Coder
+            ? mapQwenBackendToFrontend(data.qwen3Coder)
+            : generateMockResult(payload.language); // fallback if Qwen Failed
+
+        // Use server-side aggregation
+        const aggregatedResult = mapBackendAggregated(data.aggregated);
+
+        return { groqResult, geminiResult, geminiFlashResult, qwen3CoderResult, aggregatedResult };
     } catch (error) {
         // If the backend is unreachable, fall back to demo mode
         if (
@@ -258,11 +324,13 @@ export const submitReview = async (
             console.warn('[API] Backend unreachable — falling back to demo mode');
             await simulateDelay(1500 + Math.random() * 500);
 
-            const openaiResult = generateMockResult(payload.language);
-            const claudeResult = generateMockResult(payload.language);
-            const aggregatedResult = generateAggregatedResult(openaiResult, claudeResult);
+            const groqResult = generateMockResult(payload.language);
+            const geminiResult = generateMockResult(payload.language);
+            const geminiFlashResult = generateMockResult(payload.language);
+            const qwen3CoderResult = generateMockResult(payload.language);
+            const aggregatedResult = generateMockAggregated(groqResult, geminiResult, geminiFlashResult, qwen3CoderResult);
 
-            return { openaiResult, claudeResult, aggregatedResult };
+            return { groqResult, geminiResult, geminiFlashResult, qwen3CoderResult, aggregatedResult };
         }
 
         // Re-throw all other errors (AbortError, server errors, etc.)

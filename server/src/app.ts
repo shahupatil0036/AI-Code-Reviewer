@@ -1,14 +1,11 @@
-import dotenv from "dotenv";
-dotenv.config();
-
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { env } from "./config/env.js";
-import { rateLimiter } from "./middleware/rateLimiter.js";
-import { globalErrorHandler } from "./middleware/errorHandler.js";
-import { requestLogger } from "./utils/logger.js";
-import reviewRoutes from "./routes/review.routes.js";
+import { env } from "./config/env";
+import { rateLimiter } from "./middleware/rateLimiter";
+import { globalErrorHandler } from "./middleware/errorHandler";
+import { requestLogger } from "./utils/logger";
+import reviewRoutes from "./routes/review.routes";
 
 const app = express();
 
