@@ -63,18 +63,72 @@ function fallbackResult(errorMessage: string): ReviewResult {
     };
 }
 
-// ── JSON extraction from raw text ───────────────────────────────────────
+// ── JSON extraction and repair ──────────────────────────────────────────
+
+function repairTruncatedJson(raw: string): string | null {
+    let text = raw.trim();
+
+    // Remove trailing incomplete entries (comma at the end of partial object/array)
+    text = text.replace(/,\s*$/, "");
+
+    // Remove trailing incomplete string value that got cut off mid-quote
+    // e.g. "refactored_code": "function foo() {\n  ...
+    text = text.replace(/:\s*"[^"]*$/, ': ""');
+
+    // Count unclosed brackets using a simple stack
+    let openBraces = 0;
+    let openBrackets = 0;
+    let inString = false;
+    let escape = false;
+
+    for (const ch of text) {
+        if (escape) { escape = false; continue; }
+        if (ch === "\\" && inString) { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === "{") openBraces++;
+        else if (ch === "}") openBraces--;
+        else if (ch === "[") openBrackets++;
+        else if (ch === "]") openBrackets--;
+    }
+
+    // Close any open arrays first, then objects
+    const closing =
+        "]".repeat(Math.max(0, openBrackets)) +
+        "}".repeat(Math.max(0, openBraces));
+
+    const repaired = text + closing;
+
+    try {
+        JSON.parse(repaired);
+        console.warn("[Gemini] Repaired truncated JSON successfully");
+        return repaired;
+    } catch {
+        console.error("[Gemini] Could not repair truncated JSON");
+        return null;
+    }
+}
 
 function extractJsonFromText(text: string): string | null {
-    // Strip markdown code fences if present
-    const stripped = text
+    // Strip markdown code fences
+    let stripped = text
         .replace(/^```(?:json)?\s*/i, "")
         .replace(/\s*```\s*$/i, "")
         .trim();
 
-    // Try to find first JSON object
-    const match = stripped.match(/\{[\s\S]*\}/);
-    return match ? match[0] : null;
+    // Find start of JSON object
+    const startIndex = stripped.indexOf("{");
+    if (startIndex === -1) return null;
+    stripped = stripped.slice(startIndex);
+
+    // Try direct parse first
+    try {
+        JSON.parse(stripped);
+        return stripped;
+    } catch {
+        // Try to repair truncated JSON
+        return repairTruncatedJson(stripped);
+    }
 }
 
 // ── Parse and validate response ─────────────────────────────────────────
@@ -90,7 +144,6 @@ function parseModelResponse(raw: string): ReviewResult {
     try {
         const parsed = JSON.parse(jsonStr);
         const validated = reviewResultSchema.parse(parsed);
-        // Normalize confidence to lowercase
         return {
             ...validated,
             confidence: validated.confidence.toLowerCase() as ReviewResult["confidence"],
@@ -113,13 +166,13 @@ Do NOT include explanations before or after JSON.
 Do NOT wrap the JSON in code blocks.
 Do NOT add comments outside JSON.
 
-The field 'refactored_code' MUST contain fully rewritten improved code.
+CRITICAL: The 'refactored_code' field must be a complete, valid JSON string.
+Escape all special characters inside it: use \\n for newlines, \\" for quotes, \\\\ for backslashes.
 It must NOT contain placeholder text.
 It must contain actual executable improved code.
-
 If no changes are required, return the original code inside 'refactored_code'.
 
-Return ONLY the JSON object.`;
+Return ONLY the JSON object. Nothing before it, nothing after it.`;
 }
 
 function buildUserPrompt(code: string, language: string, reviewType: string): string {
@@ -132,19 +185,21 @@ function buildUserPrompt(code: string, language: string, reviewType: string): st
 
 Review type: ${reviewType}
 
-Then return strictly this JSON:
+Return strictly this JSON structure (no markdown, no backticks, raw JSON only):
 
 {
   "bugs": [{ "line": <number|null>, "description": "<string>", "severity": "<low|medium|high|critical>" }],
   "security_issues": [{ "description": "<string>", "severity": "<low|medium|high|critical>" }],
   "performance_issues": [{ "description": "<string>", "suggestion": "<string>" }],
-  "refactored_code": "<complete improved code as a string>",
+  "refactored_code": "<complete improved code as escaped JSON string>",
   "score": <number 1-10>,
   "confidence": "<low|medium|high>"
 }
 
 Code:
-${code}`;
+\`\`\`${language}
+${code}
+\`\`\``;
 }
 
 function buildRetryPrompt(): string {
@@ -165,7 +220,7 @@ async function callGemini(
         systemInstruction: buildSystemInstruction(),
         generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 2000,
+            maxOutputTokens: 8192, // raised from 2000 — truncation was the root cause
             responseMimeType: "application/json",
         },
     });
@@ -180,7 +235,7 @@ async function callGemini(
     return result.response.text();
 }
 
-// ── Main review functions ───────────────────────────────────────────────
+// ── Main review function ────────────────────────────────────────────────
 
 async function executeGeminiReview(
     modelName: string,
@@ -192,7 +247,6 @@ async function executeGeminiReview(
     const userPrompt = buildUserPrompt(code, language, reviewType);
 
     try {
-        // First attempt
         const raw = await callGemini(modelName, userPrompt, signal);
         let result = parseModelResponse(raw);
 
@@ -200,20 +254,17 @@ async function executeGeminiReview(
         if (isPlaceholderCode(result.refactored_code) && !result._error) {
             console.warn(`[Gemini ${modelName}] refactored_code missing or placeholder — retrying once`);
 
-            if (signal?.aborted) {
-                return result; // Don't retry if already aborted
-            }
+            if (signal?.aborted) return result;
 
             try {
                 const retryPrompt = `${userPrompt}\n\n${buildRetryPrompt()}`;
                 const retryRaw = await callGemini(modelName, retryPrompt, signal);
                 const retryResult = parseModelResponse(retryRaw);
 
-                // Only use retry result if refactored_code is now valid
                 if (!isPlaceholderCode(retryResult.refactored_code)) {
                     result = retryResult;
                 } else {
-                    console.warn(`[Gemini ${modelName}] Retry also produced placeholder refactored_code`);
+                    console.warn(`[Gemini ${modelName}] Retry also produced placeholder — using original code`);
                     result.refactored_code = code;
                 }
             } catch (retryError) {
@@ -224,14 +275,8 @@ async function executeGeminiReview(
 
         return result;
     } catch (error) {
-        if (signal?.aborted) {
-            throw error;
-        }
-
-        console.error(
-            `[Gemini ${modelName}] Model call failed:`,
-            error instanceof Error ? error.message : error
-        );
+        if (signal?.aborted) throw error;
+        console.error(`[Gemini ${modelName}] Model call failed:`, error instanceof Error ? error.message : error);
         throw error;
     }
 }
@@ -251,5 +296,5 @@ export async function reviewWithGeminiFlash(
     reviewType: string,
     signal?: AbortSignal
 ): Promise<ReviewResult> {
-    return executeGeminiReview("gemini-3-flash-preview", code, language, reviewType, signal);
+    return executeGeminiReview("gemini-2.5-flash", code, language, reviewType, signal);
 }

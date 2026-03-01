@@ -33,40 +33,59 @@ async function callWithTimeout(
 // ── Multi-model orchestrator ────────────────────────────────────────────
 
 /**
- * Runs Groq and Gemini reviews in parallel.
- * Individual model failures are caught — partial results are returned.
- * Only throws if BOTH models fail.
+ * Runs each AI reviewer sequentially with a 1-second delay between calls
+ * to avoid rate limiting. Individual model failures are caught and do not
+ * affect the other reviewers. Only throws if ALL models fail.
  */
 export async function performReview(
     code: string,
     language: string,
     reviewType: string
 ): Promise<MultiModelResult> {
-    const [groqSettled, geminiSettled, geminiFlashSettled, qwenSettled] = await Promise.allSettled([
-        callWithTimeout(
-            (signal) => reviewWithGroq(code, language, reviewType, signal),
-            "Groq"
-        ),
-        callWithTimeout(
-            (signal) => reviewWithGemini(code, language, reviewType, signal),
-            "Gemini"
-        ),
-        callWithTimeout(
-            (signal) => reviewWithGeminiFlash(code, language, reviewType, signal),
-            "GeminiFlash"
-        ),
-        callWithTimeout(
-            (signal) => reviewWithQwen3Coder(code, language, reviewType, signal),
-            "Qwen3Coder"
-        ),
-    ]);
+    const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+    type ReviewEntry = {
+        name: string;
+        fn: (signal: AbortSignal) => Promise<ReviewResult>;
+    };
+
+    const reviewers: ReviewEntry[] = [
+        { name: "Groq", fn: (signal) => reviewWithGroq(code, language, reviewType, signal) },
+        { name: "Gemini", fn: (signal) => reviewWithGemini(code, language, reviewType, signal) },
+        { name: "GeminiFlash", fn: (signal) => reviewWithGeminiFlash(code, language, reviewType, signal) },
+        { name: "Qwen3Coder", fn: (signal) => reviewWithQwen3Coder(code, language, reviewType, signal) },
+    ];
+
+    const results: Map<string, { status: "fulfilled"; value: ReviewResult } | { status: "rejected"; reason: unknown }> = new Map();
+
+    for (let i = 0; i < reviewers.length; i++) {
+        const { name, fn } = reviewers[i];
+
+        if (i > 0) {
+            await delay(1_000); // 1-second gap between calls to avoid rate limiting
+        }
+
+        try {
+            const value = await callWithTimeout(fn, name);
+            results.set(name, { status: "fulfilled", value });
+        } catch (error) {
+            results.set(name, { status: "rejected", reason: error });
+        }
+    }
+
+    const get = (name: string) => results.get(name)!;
+
+    const groqSettled = get("Groq");
+    const geminiSettled = get("Gemini");
+    const flashSettled = get("GeminiFlash");
+    const qwenSettled = get("Qwen3Coder");
 
     const groqResult: ReviewResult | null =
         groqSettled.status === "fulfilled" ? groqSettled.value : null;
     const geminiResult: ReviewResult | null =
         geminiSettled.status === "fulfilled" ? geminiSettled.value : null;
     const geminiFlashResult: ReviewResult | null =
-        geminiFlashSettled.status === "fulfilled" ? geminiFlashSettled.value : null;
+        flashSettled.status === "fulfilled" ? flashSettled.value : null;
     let qwenResult: any =
         qwenSettled.status === "fulfilled" ? qwenSettled.value : { error: "Model unavailable" };
 
@@ -74,13 +93,13 @@ export async function performReview(
     if (!groqResult && !geminiResult && !geminiFlashResult && qwenSettled.status === "rejected") {
         const groqErr = groqSettled.status === "rejected" ? groqSettled.reason : null;
         const geminiErr = geminiSettled.status === "rejected" ? geminiSettled.reason : null;
-        const geminiFlashErr = geminiFlashSettled.status === "rejected" ? geminiFlashSettled.reason : null;
+        const flashErr = flashSettled.status === "rejected" ? flashSettled.reason : null;
         const qwenErr = qwenSettled.reason;
 
         const message = [
             groqErr ? `Groq: ${groqErr instanceof Error ? groqErr.message : String(groqErr)}` : null,
             geminiErr ? `Gemini: ${geminiErr instanceof Error ? geminiErr.message : String(geminiErr)}` : null,
-            geminiFlashErr ? `GeminiFlash: ${geminiFlashErr instanceof Error ? geminiFlashErr.message : String(geminiFlashErr)}` : null,
+            flashErr ? `GeminiFlash: ${flashErr instanceof Error ? flashErr.message : String(flashErr)}` : null,
             qwenErr ? `Qwen3Coder: ${qwenErr instanceof Error ? qwenErr.message : String(qwenErr)}` : null,
         ].filter(Boolean).join("; ");
 
@@ -95,7 +114,12 @@ export async function performReview(
     if (!geminiFlashResult) console.warn("[ReviewService] Gemini Flash failed");
     if (qwenSettled.status === "rejected") console.warn("[ReviewService] Qwen3 Coder failed");
 
-    const aggregated = aggregateReviews(groqResult, geminiResult, geminiFlashResult, qwenSettled.status === "fulfilled" ? qwenSettled.value : null);
+    const aggregated = aggregateReviews(
+        groqResult,
+        geminiResult,
+        geminiFlashResult,
+        qwenSettled.status === "fulfilled" ? qwenSettled.value : null
+    );
 
     return {
         groq: groqResult,
