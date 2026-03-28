@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import {
-    Sun,
-    Moon,
     Plus,
     History,
     Code2,
@@ -16,176 +13,378 @@ import {
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || '';
 const hasClerk = CLERK_KEY.startsWith('pk_');
 
+/* ─── Shared pill-button styles ─────────────────────────────────────────────── */
+const pillBtnStyle: React.CSSProperties = {
+    position: 'relative',
+    display: 'inline-flex',
+    alignItems: 'center',
+    borderRadius: 9999,
+    border: '0.6px solid rgba(255,255,255,1)',
+    padding: 2,
+    overflow: 'hidden',
+    cursor: 'pointer',
+    background: 'transparent',
+    textDecoration: 'none',
+};
+
+const pillBtnInnerStyle: React.CSSProperties = {
+    background: '#000',
+    borderRadius: 9999,
+    padding: '8px 22px',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+};
+
+/* ─── Nav glow streak (top edge of pill) ───────────────────────────────────── */
+const PillGlow = () => (
+    <span style={{
+        position: 'absolute',
+        top: -8,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '60%',
+        height: 16,
+        background: 'radial-gradient(ellipse at center top, rgba(255,255,255,0.55) 0%, transparent 70%)',
+        filter: 'blur(4px)',
+        borderRadius: '50%',
+        pointerEvents: 'none',
+    }} />
+);
+
+/* ─── Component ─────────────────────────────────────────────────────────────── */
 const Navbar: React.FC = () => {
-    const { isDark, toggle } = useTheme();
     const location = useLocation();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const isActive = (path: string) => location.pathname === path;
+    const isLanding = location.pathname === '/';
 
-    // Close mobile menu on route change
+    /* scroll detection for stronger blur when scrolled */
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMobileOpen(false);
-    }, [location.pathname]);
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
-    // Close mobile menu on outside click
+    /* close mobile menu on route change */
+    useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+    /* close mobile menu on outside click */
     useEffect(() => {
         if (!mobileOpen) return;
-        const handleClick = (e: MouseEvent) => {
+        const handle = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 setMobileOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleClick);
-        return () => document.removeEventListener('mousedown', handleClick);
+        document.addEventListener('mousedown', handle);
+        return () => document.removeEventListener('mousedown', handle);
     }, [mobileOpen]);
 
-    // Lock body scroll when mobile menu open
+    /* lock body scroll on mobile menu */
     useEffect(() => {
-        if (mobileOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        document.body.style.overflow = mobileOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [mobileOpen]);
 
     const navLinks = [
-        { path: '/dashboard', label: 'New Review', icon: <Plus size={16} />, shortcut: 'Ctrl+N' },
-        { path: '/history', label: 'History', icon: <History size={16} />, shortcut: 'Ctrl+H' },
+        { path: '/dashboard', label: 'New Review', icon: <Plus size={15} /> },
+        { path: '/history',   label: 'History',    icon: <History size={15} /> },
     ];
+
+    /* On Landing page, the hero already has its own nav — hide this global one */
+    if (isLanding) return null;
 
     return (
         <>
+            <style>{`
+                .nav-link-active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -2px;
+                    left: 12px;
+                    right: 12px;
+                    height: 1.5px;
+                    background: linear-gradient(90deg, #89AACC, #4E85BF);
+                    border-radius: 999px;
+                }
+                .nav-pill-btn::before {
+                    content: '';
+                    position: absolute;
+                    top: -8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 60%;
+                    height: 16px;
+                    background: radial-gradient(ellipse at center top, rgba(255,255,255,0.55) 0%, transparent 70%);
+                    filter: blur(4px);
+                    border-radius: 50%;
+                    pointer-events: none;
+                }
+            `}</style>
+
+            {/* ── Desktop Navbar ── */}
             <nav
-                className="sticky top-0 z-50 border-b border-border/50"
                 style={{
-                    background: isDark
-                        ? 'rgba(10, 10, 26, 0.85)'
-                        : 'rgba(248, 250, 252, 0.85)',
-                    backdropFilter: 'blur(16px)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 50,
+                    background: scrolled
+                        ? 'rgba(0, 0, 0, 0.92)'
+                        : 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(20px)',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    transition: 'background 0.3s ease',
                 }}
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
+                <div style={{
+                    maxWidth: 1280,
+                    margin: '0 auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 24px',
+                    height: 60,
+                }}>
+
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2.5 group">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-all duration-300 group-hover:scale-105">
-                            <Code2 size={18} className="text-white" />
+                    <Link
+                        to="/"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            textDecoration: 'none',
+                        }}
+                    >
+                        <div style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            boxShadow: '0 0 12px rgba(99,102,241,0.35)',
+                        }}>
+                            <Code2 size={17} color="#fff" />
                         </div>
-                        <span className="text-lg font-bold text-text-primary hidden sm:inline">
+                        <span style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: '#fff',
+                            letterSpacing: '-0.01em',
+                        }}
+                            className="hidden sm:inline"
+                        >
                             AI Code Reviewer
                         </span>
                     </Link>
 
-                    {/* Center Nav Links — Desktop */}
-                    <div className="hidden sm:flex items-center gap-1">
+                    {/* Center nav links — desktop */}
+                    <div
+                        className="hidden sm:flex"
+                        style={{ alignItems: 'center', gap: 4 }}
+                    >
                         {navLinks.map((link) => (
                             <Link
                                 key={link.path}
                                 to={link.path}
-                                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 group/link ${isActive(link.path)
-                                    ? 'bg-primary/15 text-primary-light'
-                                    : 'text-text-secondary hover:text-text-primary hover-surface'
-                                    }`}
-                                title={link.shortcut}
+                                className={isActive(link.path) ? 'nav-link-active' : ''}
+                                style={{
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '6px 14px',
+                                    borderRadius: 8,
+                                    fontSize: 13,
+                                    fontWeight: 500,
+                                    textDecoration: 'none',
+                                    color: isActive(link.path)
+                                        ? '#fff'
+                                        : 'rgba(255,255,255,0.55)',
+                                    background: isActive(link.path)
+                                        ? 'rgba(255,255,255,0.07)'
+                                        : 'transparent',
+                                    transition: 'color 0.2s, background 0.2s',
+                                }}
+                                onMouseEnter={e => {
+                                    if (!isActive(link.path)) {
+                                        (e.currentTarget as HTMLAnchorElement).style.color = '#fff';
+                                        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.05)';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!isActive(link.path)) {
+                                        (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.55)';
+                                        (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                                    }
+                                }}
                             >
                                 {link.icon}
                                 {link.label}
-                                {isActive(link.path) && (
-                                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-primary to-accent rounded-full" />
-                                )}
-                                {/* Keyboard shortcut tooltip */}
-                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-surface-dark/95 border border-border/30 text-[10px] text-text-muted font-mono whitespace-nowrap opacity-0 group-hover/link:opacity-100 transition-opacity duration-200 pointer-events-none">
-                                    {link.shortcut}
-                                </span>
                             </Link>
                         ))}
                     </div>
 
-                    {/* Right Side — Desktop */}
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggle}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover-surface transition-all duration-200 hover:rotate-12"
-                            aria-label="Toggle theme"
-                        >
-                            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-                        </button>
+                    {/* Right side */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
 
-                        {/* Auth */}
-                        <div className="hidden sm:block">
+                        {/* Auth — desktop */}
+                        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 10 }}>
                             {hasClerk ? (
                                 <>
                                     <SignedOut>
                                         <SignInButton mode="modal">
-                                            <button className="btn-primary text-sm">Sign In</button>
+                                            <a className="nav-pill-btn" style={pillBtnStyle}>
+                                                <PillGlow />
+                                                <span style={pillBtnInnerStyle}>Sign In</span>
+                                            </a>
                                         </SignInButton>
                                     </SignedOut>
                                     <SignedIn>
                                         <UserButton
-                                            appearance={{
-                                                elements: { avatarBox: 'w-8 h-8' },
-                                            }}
+                                            appearance={{ elements: { avatarBox: 'w-8 h-8' } }}
                                         />
                                     </SignedIn>
                                 </>
                             ) : (
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center" title="Demo Mode">
-                                    <User size={16} className="text-primary-light" />
+                                <div style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    background: 'rgba(99,102,241,0.20)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '1px solid rgba(99,102,241,0.30)',
+                                }} title="Demo Mode">
+                                    <User size={15} color="#818cf8" />
                                 </div>
                             )}
                         </div>
 
-                        {/* Mobile Hamburger */}
+                        {/* CTA pill — "Start Reviewing" */}
+                        <Link
+                            to="/dashboard"
+                            className="nav-pill-btn hidden sm:inline-flex"
+                            style={pillBtnStyle}
+                        >
+                            <PillGlow />
+                            <span style={{ ...pillBtnInnerStyle, gap: 6 }}>
+                                <Plus size={13} />
+                                New Review
+                            </span>
+                        </Link>
+
+                        {/* Mobile hamburger */}
                         <button
                             onClick={() => setMobileOpen(!mobileOpen)}
-                            className="sm:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover-surface transition-all duration-200"
+                            className="sm:hidden"
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 8,
+                                border: '1px solid rgba(255,255,255,0.12)',
+                                background: 'rgba(255,255,255,0.05)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'rgba(255,255,255,0.70)',
+                                cursor: 'pointer',
+                            }}
                             aria-label="Toggle menu"
                         >
-                            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* Mobile Menu Overlay */}
+            {/* ── Mobile Menu Slide-in ── */}
             {mobileOpen && (
-                <div className="mobile-menu-overlay sm:hidden" onClick={() => setMobileOpen(false)}>
+                <div
+                    className="sm:hidden"
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 49,
+                        background: 'rgba(0,0,0,0.60)',
+                        backdropFilter: 'blur(4px)',
+                    }}
+                    onClick={() => setMobileOpen(false)}
+                >
                     <div
                         ref={menuRef}
-                        className="absolute right-0 top-0 h-full w-72 animate-slide-in-right"
                         style={{
-                            background: isDark
-                                ? 'rgba(10, 10, 26, 0.97)'
-                                : 'rgba(248, 250, 252, 0.97)',
-                            backdropFilter: 'blur(20px)',
-                            borderLeft: '1px solid rgba(99, 102, 241, 0.15)',
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: 280,
+                            background: '#0a0a0a',
+                            borderLeft: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex',
+                            flexDirection: 'column',
                         }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
                     >
-                        {/* Close button */}
-                        <div className="flex items-center justify-between p-4 border-b border-border/30">
-                            <span className="text-sm font-semibold text-text-primary">Menu</span>
+                        {/* Header */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '16px 20px',
+                            borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>Menu</span>
                             <button
                                 onClick={() => setMobileOpen(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover-surface transition-colors"
+                                style={{
+                                    width: 30,
+                                    height: 30,
+                                    borderRadius: 6,
+                                    border: '1px solid rgba(255,255,255,0.10)',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'rgba(255,255,255,0.60)',
+                                    cursor: 'pointer',
+                                }}
                             >
-                                <X size={18} />
+                                <X size={15} />
                             </button>
                         </div>
 
-                        {/* Nav Links */}
-                        <div className="p-4 space-y-1">
+                        {/* Links */}
+                        <div style={{ padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.path}
                                     to={link.path}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive(link.path)
-                                        ? 'bg-primary/15 text-primary-light'
-                                        : 'text-text-secondary hover:text-text-primary hover-surface'
-                                        }`}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        padding: '10px 14px',
+                                        borderRadius: 10,
+                                        fontSize: 14,
+                                        fontWeight: 500,
+                                        textDecoration: 'none',
+                                        color: isActive(link.path) ? '#fff' : 'rgba(255,255,255,0.55)',
+                                        background: isActive(link.path) ? 'rgba(255,255,255,0.07)' : 'transparent',
+                                    }}
                                 >
                                     {link.icon}
                                     {link.label}
@@ -194,34 +393,57 @@ const Navbar: React.FC = () => {
                         </div>
 
                         {/* Divider */}
-                        <div className="gradient-divider mx-4" />
+                        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 20px' }} />
 
-                        {/* Auth in mobile */}
-                        <div className="p-4">
+                        {/* Auth */}
+                        <div style={{ padding: '16px 20px' }}>
                             {hasClerk ? (
                                 <>
                                     <SignedOut>
                                         <SignInButton mode="modal">
-                                            <button className="btn-primary w-full justify-center text-sm">Sign In</button>
+                                            <button style={{
+                                                width: '100%',
+                                                padding: '10px',
+                                                borderRadius: 10,
+                                                border: '0.6px solid rgba(255,255,255,1)',
+                                                background: '#000',
+                                                color: '#fff',
+                                                fontSize: 14,
+                                                fontWeight: 500,
+                                                cursor: 'pointer',
+                                            }}>
+                                                Sign In
+                                            </button>
                                         </SignInButton>
                                     </SignedOut>
                                     <SignedIn>
-                                        <div className="flex items-center gap-3">
-                                            <UserButton
-                                                appearance={{
-                                                    elements: { avatarBox: 'w-8 h-8' },
-                                                }}
-                                            />
-                                            <span className="text-sm text-text-secondary">Account</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <UserButton appearance={{ elements: { avatarBox: 'w-8 h-8' } }} />
+                                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.50)' }}>Account</span>
                                         </div>
                                     </SignedIn>
                                 </>
                             ) : (
-                                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/5">
-                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                        <User size={16} className="text-primary-light" />
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                    padding: '10px 14px',
+                                    borderRadius: 10,
+                                    background: 'rgba(99,102,241,0.07)',
+                                }}>
+                                    <div style={{
+                                        width: 30,
+                                        height: 30,
+                                        borderRadius: '50%',
+                                        background: 'rgba(99,102,241,0.20)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <User size={14} color="#818cf8" />
                                     </div>
-                                    <span className="text-sm text-text-muted">Demo Mode</span>
+                                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.50)' }}>Demo Mode</span>
                                 </div>
                             )}
                         </div>

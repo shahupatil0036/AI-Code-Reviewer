@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
 import { ReviewProvider } from './context/ReviewContext';
 import { ToastProvider } from './components/ui/Toast';
 import Navbar from './components/layout/Navbar';
 import ScrollToTop from './components/layout/ScrollToTop';
+import LoadingScreen from './components/ui/LoadingScreen';
 import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import HistoryPage from './pages/HistoryPage';
@@ -66,18 +68,41 @@ const AppContent: React.FC = () => (
   </ThemeProvider>
 );
 
-const App: React.FC = () => {
-  // Only wrap with ClerkProvider if a valid publishable key is configured
-  if (hasClerkKey) {
-    return (
-      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
-        <AppContent />
-      </ClerkProvider>
-    );
-  }
+// ─── AppWrapper: controls loader → page transition ────────────────────────────
+const AppWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Demo mode — no Clerk auth, everything accessible
-  return <AppContent />;
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        {isLoading && (
+          <LoadingScreen onComplete={() => setIsLoading(false)} />
+        )}
+      </AnimatePresence>
+
+      <div
+        style={{
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.5s ease-out',
+        }}
+      >
+        {children}
+      </div>
+    </>
+  );
+};
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+const App: React.FC = () => {
+  const content = hasClerkKey ? (
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      <AppContent />
+    </ClerkProvider>
+  ) : (
+    <AppContent />
+  );
+
+  return <AppWrapper>{content}</AppWrapper>;
 };
 
 export default App;
