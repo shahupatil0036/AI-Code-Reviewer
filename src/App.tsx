@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
@@ -70,7 +70,8 @@ const AppContent: React.FC = () => (
 
 // ─── AppWrapper: controls loader → page transition ────────────────────────────
 const AppWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(location.pathname === '/');
 
   return (
     <>

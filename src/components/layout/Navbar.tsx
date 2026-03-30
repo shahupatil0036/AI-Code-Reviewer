@@ -4,7 +4,6 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-reac
 import {
     Plus,
     History,
-    Code2,
     User,
     Menu,
     X,
@@ -30,10 +29,11 @@ const pillBtnStyle: React.CSSProperties = {
 const pillBtnInnerStyle: React.CSSProperties = {
     background: '#000',
     borderRadius: 9999,
-    padding: '8px 22px',
+    padding: '11px 29px',
     color: '#fff',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 500,
+    fontFamily: "'General Sans', sans-serif",
     whiteSpace: 'nowrap',
     position: 'relative',
     display: 'flex',
@@ -137,22 +137,19 @@ const Navbar: React.FC = () => {
                     position: 'sticky',
                     top: 0,
                     zIndex: 50,
-                    background: scrolled
-                        ? 'rgba(0, 0, 0, 0.92)'
-                        : 'rgba(0, 0, 0, 0.75)',
-                    backdropFilter: 'blur(20px)',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    transition: 'background 0.3s ease',
+                    background: scrolled ? 'rgba(0, 0, 0, 0.92)' : 'transparent',
+                    backdropFilter: scrolled ? 'blur(20px)' : 'none',
+                    borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+                    transition: 'all 0.3s ease',
                 }}
             >
-                <div style={{
-                    maxWidth: 1280,
-                    margin: '0 auto',
+                <div className="px-8 md:px-[120px]" style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 24px',
-                    height: 60,
+                    paddingTop: 20,
+                    paddingBottom: 20,
+                    width: '100%',
                 }}>
 
                     {/* Logo */}
@@ -161,33 +158,21 @@ const Navbar: React.FC = () => {
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 10,
                             textDecoration: 'none',
                         }}
                     >
-                        <div style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 10,
-                            background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            boxShadow: '0 0 12px rgba(99,102,241,0.35)',
-                        }}>
-                            <Code2 size={17} color="#fff" />
-                        </div>
-                        <span style={{
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: '#fff',
-                            letterSpacing: '-0.01em',
-                        }}
-                            className="hidden sm:inline"
+                        <div
+                            style={{
+                                width: 187,
+                                height: 25,
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
                         >
-                            AI Code Reviewer
-                        </span>
+                            <svg width="187" height="25" viewBox="0 0 187 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <text x="0" y="20" fill="white" fontFamily="'General Sans', sans-serif" fontSize="16" fontWeight="700" letterSpacing="0.5">AI Code Reviewer</text>
+                            </svg>
+                        </div>
                     </Link>
 
                     {/* Center nav links — desktop */}
@@ -281,9 +266,8 @@ const Navbar: React.FC = () => {
                             style={pillBtnStyle}
                         >
                             <PillGlow />
-                            <span style={{ ...pillBtnInnerStyle, gap: 6 }}>
-                                <Plus size={13} />
-                                New Review
+                            <span style={pillBtnInnerStyle}>
+                                Start Reviewing
                             </span>
                         </Link>
 

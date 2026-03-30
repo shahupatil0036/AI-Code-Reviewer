@@ -22,7 +22,7 @@ const features = [
         icon: <Layers size={24} />,
         title: 'Multi-LLM Comparison',
         description:
-            'Get parallel analysis from Gemini and Claude. Compare findings and spot issues no single model catches alone.',
+            'Get parallel analysis from Gemini, Llama (Groq), and Qwen Coder. Compare findings and spot issues no single model catches alone.',
         color: 'from-indigo-500 to-purple-500',
     },
     {
@@ -69,8 +69,6 @@ const steps = [
     },
 ];
 
-
-
 const LandingPage: React.FC = () => {
     return (
         <div className="min-h-screen relative overflow-hidden">
@@ -85,6 +83,7 @@ const LandingPage: React.FC = () => {
                 <style>{`
                     @import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap');
                     .hero-section * { font-family: 'General Sans', sans-serif !important; }
+
                     .waitlist-btn-nav {
                         position: relative;
                         display: inline-flex;
@@ -163,6 +162,134 @@ const LandingPage: React.FC = () => {
                         -webkit-text-fill-color: transparent;
                         background-clip: text;
                     }
+
+                    /* ── Dropdown ── */
+                    .nav-dd-wrap {
+                        position: relative;
+                        display: inline-flex;
+                        align-items: center;
+                    }
+                    .nav-dd-trigger {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                        color: #fff;
+                        font-size: 14px;
+                        font-weight: 500;
+                        font-family: 'General Sans', sans-serif;
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        padding: 4px 0;
+                        transition: color 0.2s;
+                    }
+                    .nav-dd-trigger:hover { color: rgba(255,255,255,0.75); }
+                    .nav-dd-chevron {
+                        transition: transform 0.22s ease;
+                        display: block;
+                    }
+                    .nav-dd-wrap:hover .nav-dd-chevron {
+                        transform: rotate(180deg);
+                    }
+                    .nav-dd-panel {
+                        position: absolute;
+                        top: calc(100% + 18px);
+                        left: 0;
+                        opacity: 0;
+                        pointer-events: none;
+                        transform: translateY(-6px);
+                        transition: opacity 0.2s ease, transform 0.2s ease;
+                        z-index: 200;
+                        min-width: 290px;
+                    }
+                    .nav-dd-panel-center {
+                        left: 50%;
+                        transform: translateX(-50%) translateY(-6px);
+                    }
+                    .nav-dd-panel-right {
+                        left: auto;
+                        right: 0;
+                    }
+                    .nav-dd-wrap:hover .nav-dd-panel {
+                        opacity: 1;
+                        pointer-events: auto;
+                        transform: translateY(0);
+                    }
+                    .nav-dd-wrap:hover .nav-dd-panel-center {
+                        transform: translateX(-50%) translateY(0);
+                    }
+                    .nav-dd-box {
+                        background: rgba(8,8,8,0.97);
+                        border: 1px solid rgba(255,255,255,0.10);
+                        border-radius: 16px;
+                        padding: 8px;
+                        backdrop-filter: blur(40px);
+                        box-shadow: 0 24px 60px rgba(0,0,0,0.75), 0 0 0 0.5px rgba(255,255,255,0.05);
+                        position: relative;
+                    }
+                    .nav-dd-box::before {
+                        content: '';
+                        position: absolute;
+                        top: -6px;
+                        left: 28px;
+                        width: 12px;
+                        height: 12px;
+                        background: rgba(8,8,8,0.97);
+                        border-left: 1px solid rgba(255,255,255,0.10);
+                        border-top: 1px solid rgba(255,255,255,0.10);
+                        transform: rotate(45deg);
+                        border-radius: 2px;
+                    }
+                    .nav-dd-box-center::before { left: 50%; transform: translateX(-50%) rotate(45deg); }
+                    .nav-dd-box-right::before { left: auto; right: 28px; }
+                    .nav-dd-header {
+                        padding: 8px 14px 4px;
+                        font-size: 10px;
+                        font-weight: 600;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        color: rgba(255,255,255,0.28);
+                        font-family: 'General Sans', sans-serif;
+                    }
+                    .nav-dd-item {
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                        padding: 10px 12px;
+                        border-radius: 10px;
+                        text-decoration: none;
+                        cursor: pointer;
+                        transition: background 0.15s;
+                    }
+                    .nav-dd-item:hover { background: rgba(255,255,255,0.07); }
+                    .nav-dd-ico {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        font-size: 18px;
+                    }
+                    .nav-dd-title {
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #fff;
+                        margin-bottom: 2px;
+                        font-family: 'General Sans', sans-serif;
+                    }
+                    .nav-dd-desc {
+                        font-size: 11.5px;
+                        color: rgba(255,255,255,0.42);
+                        line-height: 1.5;
+                        font-family: 'General Sans', sans-serif;
+                    }
+                    .nav-dd-divider {
+                        height: 1px;
+                        background: rgba(255,255,255,0.07);
+                        margin: 5px 12px;
+                    }
                 `}</style>
 
                 {/* Background Video */}
@@ -187,60 +314,206 @@ const LandingPage: React.FC = () => {
 
                     {/* ── Navbar ── */}
                     <nav
+                        className="px-8 md:px-[120px]"
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            paddingLeft: 120,
-                            paddingRight: 120,
                             paddingTop: 20,
                             paddingBottom: 20,
                         }}
-                        className="px-8 md:px-[120px]"
                     >
                         {/* Left: Logo + Nav Links */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
                             {/* Logo wordmark */}
-                            <div
-                                style={{
-                                    width: 187,
-                                    height: 25,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}
-                            >
+                            <div style={{ width: 187, height: 25, display: 'flex', alignItems: 'center' }}>
                                 <svg width="187" height="25" viewBox="0 0 187 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <text x="0" y="20" fill="white" fontFamily="'General Sans', sans-serif" fontSize="16" fontWeight="700" letterSpacing="0.5">AI Code Reviewer</text>
                                 </svg>
                             </div>
 
                             {/* Nav links — hidden on mobile */}
-                            <div className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
-                                {['Get Started', 'Dashboard', 'Features', 'How It Works'].map((label) => (
-                                    <a
-                                        key={label}
-                                        href="#"
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 14,
-                                            color: '#fff',
-                                            fontSize: 14,
-                                            fontWeight: 500,
-                                            textDecoration: 'none',
-                                        }}
-                                    >
-                                        {label}
-                                        {/* Chevron-down */}
-                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M3 5L7 9L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            <div className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+
+                                {/* ── GET STARTED ── */}
+                                <div className="nav-dd-wrap">
+                                    <button className="nav-dd-trigger">
+                                        Get Started
+                                        <svg className="nav-dd-chevron" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                                            <path d="M3 5L7 9L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                    </a>
-                                ))}
+                                    </button>
+                                    <div className="nav-dd-panel">
+                                        <div className="nav-dd-box">
+                                            <div className="nav-dd-header">Quick Start</div>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(99,102,241,0.14)' }}>🚀</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Try for Free</div>
+                                                    <div className="nav-dd-desc">Paste your code and get an instant AI-powered review — no signup required.</div>
+                                                </div>
+                                            </a>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(6,182,212,0.14)' }}>📋</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Paste Your Code</div>
+                                                    <div className="nav-dd-desc">Drop any snippet into the Monaco editor — JS, TS, Python, Java, Kotlin supported.</div>
+                                                </div>
+                                            </a>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(16,185,129,0.14)' }}>⚙️</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Pick a Review Type</div>
+                                                    <div className="nav-dd-desc">Choose Bug Detection, Security Audit, Performance, or Full Review mode.</div>
+                                                </div>
+                                            </a>
+                                            <div className="nav-dd-divider" />
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(245,158,11,0.14)' }}>⚡</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Results in Seconds</div>
+                                                    <div className="nav-dd-desc">Gemini, Llama & Qwen analyse your code in parallel — results merged instantly.</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ── DASHBOARD ── */}
+                                <div className="nav-dd-wrap">
+                                    <button className="nav-dd-trigger">
+                                        Dashboard
+                                        <svg className="nav-dd-chevron" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                                            <path d="M3 5L7 9L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                    <div className="nav-dd-panel nav-dd-panel-center">
+                                        <div className="nav-dd-box nav-dd-box-center">
+                                            <div className="nav-dd-header">Your Workspace</div>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(99,102,241,0.14)' }}>🖥️</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Code Editor</div>
+                                                    <div className="nav-dd-desc">Monaco-powered editor with syntax highlighting & one-click clipboard paste.</div>
+                                                </div>
+                                            </a>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(139,92,246,0.14)' }}>🤖</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Multi-Model Analysis</div>
+                                                    <div className="nav-dd-desc">Gemini 1.5 Flash, Llama 3 (Groq), and Qwen Coder run in parallel — no single point of failure.</div>
+                                                </div>
+                                            </a>
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(6,182,212,0.14)' }}>📊</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Aggregated Results</div>
+                                                    <div className="nav-dd-desc">Unified executive summary with risk score, priority ranking, and per-model tabs.</div>
+                                                </div>
+                                            </a>
+                                            <div className="nav-dd-divider" />
+                                            <a href="/history" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(16,185,129,0.14)' }}>🕓</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Review History</div>
+                                                    <div className="nav-dd-desc">Browse all past reviews, filter by language, type, and quality score.</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ── FEATURES ── */}
+                                <div className="nav-dd-wrap">
+                                    <button className="nav-dd-trigger">
+                                        Features
+                                        <svg className="nav-dd-chevron" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                                            <path d="M3 5L7 9L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                    <div className="nav-dd-panel nav-dd-panel-right" style={{ minWidth: 310 }}>
+                                        <div className="nav-dd-box nav-dd-box-right">
+                                            <div className="nav-dd-header">What You Get</div>
+                                            <a href="#features" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(99,102,241,0.14)' }}>🧠</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Multi-LLM Comparison</div>
+                                                    <div className="nav-dd-desc">Three AI models run in parallel — catch issues no single model finds on its own.</div>
+                                                </div>
+                                            </a>
+                                            <a href="#features" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(6,182,212,0.14)' }}>🔍</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Structured Reports</div>
+                                                    <div className="nav-dd-desc">Bugs, security vulnerabilities, and performance issues — each with actionable fix suggestions.</div>
+                                                </div>
+                                            </a>
+                                            <a href="#features" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(245,158,11,0.14)' }}>🔒</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Security Audit Mode</div>
+                                                    <div className="nav-dd-desc">Detect OWASP Top 10 risks, injection attacks, auth bypasses, and unsafe dependencies.</div>
+                                                </div>
+                                            </a>
+                                            <a href="#features" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(16,185,129,0.14)' }}>⚡</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Performance Analysis</div>
+                                                    <div className="nav-dd-desc">Identify bottlenecks, memory leaks, inefficient loops, and algorithmic complexity issues.</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ── HOW IT WORKS ── */}
+                                <div className="nav-dd-wrap">
+                                    <button className="nav-dd-trigger">
+                                        How It Works
+                                        <svg className="nav-dd-chevron" width="12" height="12" viewBox="0 0 14 14" fill="none">
+                                            <path d="M3 5L7 9L11 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                    <div className="nav-dd-panel nav-dd-panel-right" style={{ minWidth: 300 }}>
+                                        <div className="nav-dd-box nav-dd-box-right">
+                                            <div className="nav-dd-header">3-Step Process</div>
+                                            <div className="nav-dd-item" style={{ cursor: 'default' }}>
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(99,102,241,0.14)', fontWeight: 700, color: '#818cf8', fontSize: 14 }}>01</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Paste Your Code</div>
+                                                    <div className="nav-dd-desc">Open the dashboard, pick a language, and drop your snippet into the Monaco editor.</div>
+                                                </div>
+                                            </div>
+                                            <div className="nav-dd-item" style={{ cursor: 'default' }}>
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(6,182,212,0.14)', fontWeight: 700, color: '#06b6d4', fontSize: 14 }}>02</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Choose Review Type</div>
+                                                    <div className="nav-dd-desc">Select Bug Detection, Security Audit, Performance, or Full Review from the sidebar.</div>
+                                                </div>
+                                            </div>
+                                            <div className="nav-dd-item" style={{ cursor: 'default' }}>
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(16,185,129,0.14)', fontWeight: 700, color: '#10b981', fontSize: 14 }}>03</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Get AI Results</div>
+                                                    <div className="nav-dd-desc">All three models analyze in seconds. Results are merged into a priority-ranked report with a quality score.</div>
+                                                </div>
+                                            </div>
+                                            <div className="nav-dd-divider" />
+                                            <a href="/dashboard" className="nav-dd-item">
+                                                <div className="nav-dd-ico" style={{ background: 'rgba(245,158,11,0.12)' }}>▶️</div>
+                                                <div>
+                                                    <div className="nav-dd-title">Try It Now — It's Free</div>
+                                                    <div className="nav-dd-desc">Go straight to the dashboard and run your first review.</div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 
-                        {/* Right: Join Waitlist button */}
+                        {/* Right: Start Reviewing button */}
                         <a href="/dashboard" className="waitlist-btn-nav">
                             <span className="waitlist-btn-nav-inner">Start Reviewing</span>
                         </a>
@@ -270,7 +543,6 @@ const LandingPage: React.FC = () => {
                                 padding: '6px 14px',
                             }}
                         >
-                            {/* 4px white dot */}
                             <span
                                 style={{
                                     width: 4,
@@ -330,7 +602,7 @@ const LandingPage: React.FC = () => {
                 ═══════════════════════════════════════ */}
             <div style={{ background: '#000', position: 'relative', overflow: 'hidden' }}>
 
-                {/* Subtle ambient orbs — very low opacity on black */}
+                {/* Subtle ambient orbs */}
                 <div className="pointer-events-none" style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                     <div style={{ position: 'absolute', top: '10%', left: '15%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.07), transparent 70%)', filter: 'blur(40px)' }} />
                     <div style={{ position: 'absolute', bottom: '20%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.06), transparent 70%)', filter: 'blur(40px)' }} />
@@ -341,7 +613,7 @@ const LandingPage: React.FC = () => {
                 <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)', margin: '0 auto', maxWidth: 896 }} />
 
                 {/* ── Features Section ── */}
-                <section style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '96px 24px' }}>
+                <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '96px 24px' }}>
                     <div style={{ textAlign: 'center', marginBottom: 64 }}>
                         <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 700, color: '#fff', marginBottom: 16 }}>
                             Everything You Need for{' '}
